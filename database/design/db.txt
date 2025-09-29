@@ -24,7 +24,7 @@ Table transaction {
   last_updated_user_id fk [ref: > user.id]
   amount varchar
   description text
-  expense_type enum [note: "payment, settle"]
+  transaction_type enum [note: "payment, settlement"]
   created_at timestamp
   updated_at timestamp
 }
@@ -34,5 +34,5 @@ Table transaction_user {
   transaction_id fk [ref: > transaction.id]
   user_id fk [ref: - user.id]
   amount varchar
-  person_type enum [note: "payer, payee"]
+  transaction_user_type enum [note: "payer, payee"]
 }
