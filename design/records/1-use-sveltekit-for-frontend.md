@@ -1,5 +1,5 @@
 ---
-title: Use Web/Sveltekit for Frontend
+title: Use Web/SvelteKit for Frontend
 status: Proposed
 date: 2025-10-03
 ---
@@ -18,20 +18,20 @@ As we start building the fair-n-square product, we want to pick a UI framework t
 
 ## Decision
 
-We will use sveltekit for frontend. It works on browser, which makes it platform agnostic.
+We will use SvelteKit for frontend. It works on browser, which makes it platform agnostic.
 
 ## Consequences
 
 There are a few things that we will need to think about
 
 - It is pretty new compared to something like React + Next.js. Which means we have to learn this.
-- We will want to use sveltekit to its fullest, so it has both frontend + backend component. Which means two things
+- We will want to use SvelteKit to its fullest, so it has both frontend + backend component. Which means two things
   - We have the capability to do server side rendering, which is good for SEO and performance
-  - We will have to be careful what we put on the server side. We want to keep the scope of frontend tied just to solve frontend problems. We don't want to put business logic on the server side of sveltekit.
+  - We will have to be careful what we put on the server side. We want to keep the scope of frontend tied just to solve frontend problems. We don't want to put business logic on the server side of SvelteKit.
 
 ### Positive
 
-- Sveltekit is easy to use, feels closer to Javascript/Typescript + HTML model than other frameworks
+- SvelteKit is easy to use, feels closer to Javascript/Typescript + HTML model than other frameworks
 - SSR will be fast to render on mobile
 - Using web framework instead of mobile app helps to reduce friction to onboard users
 
@@ -66,7 +66,7 @@ There are a few things that we will need to think about
 #### Cons
 
 - React/Vue project feel really bloated
-- Next.js is pretty close to svelte conceptually as it also does SSR, but it still uses React which has very bloated syntax and complicates things way too much
+- Next.js is pretty close to Svelte conceptually as it also does SSR, but it still uses React which has very bloated syntax and complicates things way too much
 - Learning something new would be really exciting
 
 ## Change Record
