@@ -23,7 +23,7 @@ System design is a high level design for the the entire system. We will use the 
 We capture how we build systems using an ADR. The reason for this is to create a standard approach to building similar systems. For example, we can have a standard approach to building microservices.
 To not constraint the choices for implementation, we will not capture the implementation details in system design. But rather, we want to capture decisions like, but not limited to, logging, monitoring, tracing, error handling, api design etc.
 
-PS: choice of language falls under implementation detail and should not be enforced in system design. It should rather be captured as a suggestion, if necessasary.
+PS: choice of language falls under implementation detail and should not be enforced in system design. It should rather be captured as a suggestion, if necessary.
 
 ### Component design
 
