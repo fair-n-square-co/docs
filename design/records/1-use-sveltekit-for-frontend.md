@@ -14,7 +14,7 @@ To build this new system, we want to pick a UI framework. We want to analyse whi
 - Developer experience and product iteration
 - Learning opportunity
 
-As we start building the fair-n-square product, we want to pick a UI framework that is easy to work with, has less friction as we are not experts in frontend and is not frontend agnostic.
+As we start building the fair-n-square product, we want to pick a UI framework that is easy to work with, has less friction as we are not experts in frontend, and is focused on frontend development.
 
 ## Decision
 
