@@ -46,7 +46,7 @@ There are a few things that we will need to think about
 
 #### Pros
 
-- Have better data persistance
+- Have better data persistence
 - Will have better performance since UI is already part of the app
 
 #### Cons
