@@ -1,6 +1,6 @@
 ---
-title: "[Title of ADR]"
-status: "[Proposed | Accepted | Deprecated | Superseded]"
+title: [Title of ADR]
+status: [Proposed | Accepted | Deprecated | Superseded]
 date: YYYY-MM-DD
 ---
 
