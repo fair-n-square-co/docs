@@ -8,7 +8,7 @@ date: 2025-10-07
 
 ## Context
 
-For building fair-n-square, we want to start with a simple system design that can help us to define system boundaries, identify systems that need to be build, and how these systems will interact with each other.
+For building fair-n-square, we want to start with a simple system design that can help us to define system boundaries, identify systems that need to be built, and how these systems will interact with each other.
 
 ## Decision
 
@@ -36,7 +36,7 @@ Points to consider:
 
 - We want to set clear boundaries for what SvelteKit will be used for. It only focuses on UI related problems. All the business logic will be handled by core service or Auth service.
 - We don't want SvelteKit frontend to interact with Core service much. Most of the data should be rendered by SvelteKit backend. UI could interact with other systems in exceptional scenarios as long as it is documented and justified with why alternatives don't work.
-- We will use SvelteKit backend to directly login/signup users. Sveltekit will manage user sessions. It will interact with Auth service to CRUD user profile data. The sessions will be managed in it's own DB.
+- We will use SvelteKit backend to directly login/signup users. Sveltekit will manage user sessions. It will interact with Auth service to CRUD user profile data. The sessions will be managed in its own DB.
 
 ### Auth Service
 
@@ -61,7 +61,7 @@ The core service will identify and implement core business logic. It will be res
 - treating user as a resource and not storing user profile data. We only want to store user id as reference and only store business data related to application
 - provide APIs for store/fetch user groups, transactions/ledgers, manage friends, group task list, group settings etc.
 - adding features in the future. We will treat core service as a monolith for all the business logic. No need to break it down into smaller services, rather keep the code modular and clean with clear boundaries to manage complexity.
-- Most of the APIs should be based on gRPC for better performance, better schema management, strong data types and using multiple proto services per feature set. Standard APIs can be used in rare cases using connectRPC's API.
+- Most of the APIs should be based on gRPC for better performance, better schema management, strong data types, and using multiple proto services per feature set. Standard APIs can be used in rare cases using connectRPC's API.
 
 ## Consequences
 
@@ -69,7 +69,7 @@ There are a few things that should be noted here.
 
 - We will manage multiple services. It is not advised to use multiple services for a simple application. The purpose of doing so is to dive deep into advanced concepts and learn how to build complex systems.
 - We will need to manage deployments, CI/CD, monitoring, logging etc for multiple services.
-- We might also need to host/maintain dependent services like authorisation service, databases etc.
+- We might also need to host/maintain dependent services like authorization service, databases etc.
 - We should leverage services which has free tier for OSS projects to minimise cost.
 
 ### Positive
@@ -83,7 +83,7 @@ There are a few things that should be noted here.
 
 - Increased complexity in managing multiple services. It takes a lot longer to setup CI/CD for multiple services
 - Will have to think if we need something like k8s to manage multiple services. Then comes the complexity of managing k8s cluster, designing control plane/data plane and making services/network secure.
-- A lot of boilerplate for gRPC + REST and do manage multiple repos at the same time.
+- A lot of boilerplate for gRPC + REST and to manage multiple repos at the same time.
 - Increased cost of hosting multiple services.
 - Need to think about telemetry for distributed systems
 - Need to be careful with security as multiple services increase attack surface
@@ -95,7 +95,7 @@ There are a few alternatives that were considered.
 
 - We could have used a monolithic architecture, but that would not have given us the learning opportunity to build complex systems.
 - We also could have used serverless architecture, but that would have limited our control over the system and would not have given us the opportunity to learn about managing services.
-- We could have used something like Firebase for everything, but it is not something that would be used for enterprise applications of applications of scale. It becomes very costly very fast and also has limitation on fine-tuning individual systems.
+- We could have used something like Firebase for everything, but it is not something that would be used for enterprise applications or applications at scale. It becomes very costly very fast and also has limitation on fine-tuning individual systems.
 
 ## References
 
