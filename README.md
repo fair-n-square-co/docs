@@ -10,4 +10,4 @@
 - **Infrastructure**: Fly.io for now?
 
 ## Architecture desicions
-Design decisions are made in [design/architecture](./design/architecture/) directory
+Design decisions are made in [design](./design/) directory
