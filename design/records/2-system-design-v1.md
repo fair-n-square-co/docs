@@ -21,7 +21,7 @@ We will be using a simple microservices based architecture. We will have the fol
 - Auth DB: We would want to store user profile data. This will also be responsible for handling user sessions, maintaining user profile data, user preferences etc.
 - Core Service: Handles core business logic and data. This system will not handle user profile data.
 - Core DB: This will be responsible for storing core business data.
-- Authn/Authz provider: We will likely use WorkOS for this.
+- Authentication/Authorization provider: We will likely use WorkOS for this.
 
 The following diagram illustrates the system design. This is created using excallidraw.
 
@@ -42,9 +42,9 @@ Points to consider:
 
 The Auth Service will be very critical and will also be most interacted with service. It will be responsible for:
 
-- Interacting with 3rd party authn/authz provider for authz most of the time.
-- interacting with WorkOS for authn. Auth service is mostly responsible for managing user profile data.
-- providing an interface for Fine-grained authorization. We will also evaluate workOS FGA/openFGA/permit.io etc in the future. The idea is that we want to decouple Authz and also learn to implement ReBAC policy.
+- Interacting with 3rd party authentication/authorization provider for authorization most of the time.
+- interacting with WorkOS for authentication. Auth service is mostly responsible for managing user profile data.
+- providing an interface for Fine-grained authorization. We will also evaluate workOS FGA/openFGA/permit.io etc in the future. The idea is that we want to decouple Authorization and also learn to implement ReBAC policy.
 - getting M2M tokens for core service to interact with auth service on behalf of users.
 - storing JWKs from the auth provider and will host it to validate tokens by other services.
 - providing APIS for managing user profile data.
