@@ -2,7 +2,7 @@
 
 ## Overview
 
-Fair N Square came out of necessisity of building a payment splitting system like Splitwise since it is now very limited for free use. The goal of this MVP is to build/deploy with enterprise grade architecture and design principles. The goal is also to learn how to build complex systems with clear boundaries and good practices. The end-to-end system will be open source and free to use for everyone.
+Fair N Square came out of necessity of building a payment splitting system like Splitwise since it is now very limited for free use. The goal of this MVP is to build/deploy with enterprise grade architecture and design principles. The goal is also to learn how to build complex systems with clear boundaries and good practices. The end-to-end system will be open source and free to use for everyone.
 
 ## Goals & Objectives
 
@@ -15,11 +15,11 @@ Fair N Square came out of necessisity of building a payment splitting system lik
 - As a user, I want to be able to choose different split methods (equal, exact amounts, percentages).
 - As a user, I want to be able to edit/delete expenses.
 - As a user, I want to be able to add comments/notes to expenses.
-- As a user, I want to be able to attach attachements like photos/pdf to expenses.
+- As a user, I want to be able to attach attachments like photos/pdf to expenses.
 - As a user, I want to be able to view group balances and individual member balances.
 - As a user, I want to be able to view my balance and transaction history.
 - As a user, I want to be able to settle up with other group members.
-- As a user, I should have the ability simplify debts within the group.
+- As a user, I should have the ability to simplify debts within the group.
 - As a user, I want to also have an ability to create multiple todo lists for the group.
 - As a user, I want to assign tasks to group members.
 - As a user, I want to be able to manage group settings and preferences.
@@ -33,7 +33,7 @@ Fair N Square came out of necessisity of building a payment splitting system lik
 
 ### Out of scope for MVP
 
-- Push notification system (can still have add it as a stretch goal if required)
+- Push notification system (can still add it as a stretch goal if required)
 - Advanced reporting, analytics, export transaction list etc.
 - Transaction categories
 - In-app chat or messaging system.
@@ -82,7 +82,7 @@ Some of the advanced technical requirements can be out of scope, but we want to 
 
 ### Assumptions
 
-- We won't have much traffic. It is build for learning purposes, for us, by us.
+- We won't have much traffic. It is built for learning purposes, for us, by us.
 - We would possibly host a lot of the services on free tier to keep the cost low.
 - For other o11y services, we could get a free tier for OSS projects.
 - We will be using third party services for authentication/authorization to keep the scope manageable.
