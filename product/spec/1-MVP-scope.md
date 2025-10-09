@@ -39,6 +39,7 @@ Fair N Square came out of necessisity of building a payment splitting system lik
 - In-app chat or messaging system.
 - Performance testing/load testing.
 - Mobile apps (can be added in future)
+- MCP server for AI agents
 
 ## Target Audience
 
