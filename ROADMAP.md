@@ -3,7 +3,7 @@
 ## Overview
 This roadmap outlines the epics and tasks for building Fair N Square, an open-source expense splitting application with enterprise-grade architecture. The project follows a microservices architecture with SvelteKit frontend, Go backend services, and gRPC APIs.
 
-**Target Launch:** Q4 2025  
+**Target Launch:** Q4 2025
 **Development Approach:** Kanban/Waterfall hybrid
 
 ---
@@ -69,7 +69,7 @@ This roadmap outlines the epics and tasks for building Fair N Square, an open-so
 - Create initial API specifications
 
 **FNS-202: Third-Party Auth Integration** (8 points)
-- Integrate with WorkOS/Firebase for authentication
+- Integrate betterauth library for authentication in sveltekit backend
 - Implement user sign-up flow
 - Implement user login flow
 - Implement OAuth2/OIDC flows
