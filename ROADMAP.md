@@ -22,7 +22,7 @@ This roadmap outlines the epics and tasks for building Fair N Square, an open-so
 - Document development setup process
 
 **FNS-102: Third-Party Service Selection** (5 points)
-- Research and select authentication provider (WorkOS/Firebase)
+- Implement authentication using Better Auth (per ADR-3)
 - Research and select authorization service (OpenFGA/Permit.io)
 - Select database solution (PostgreSQL/Cloud Spanner/Turso)
 - Select hosting provider (Fly.io or alternatives)
@@ -608,7 +608,7 @@ This roadmap outlines the epics and tasks for building Fair N Square, an open-so
 - **Frontend**: SvelteKit (TypeScript)
 - **Backend**: Go with gRPC + connectRPC
 - **Database**: PostgreSQL
-- **Auth**: WorkOS/Firebase
+- **Auth**: Better Auth
 - **Authorization**: OpenFGA/Permit.io
 - **Hosting**: Fly.io (or alternatives)
 - **CI/CD**: GitHub Actions
