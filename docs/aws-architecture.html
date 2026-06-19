@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fair N Square — AWS Architecture &amp; IaC</title>
+<style>
+  :root {
+    --bg: #0e1116; --panel: #161b22; --panel2: #1c2230; --line: #2a313c;
+    --text: #e6edf3; --muted: #9aa7b4; --accent: #4f8cff; --accent2: #6ee7b7;
+    --warn: #f2cc60; --bad: #f47272;
+    --mono: "SFMono-Regular", ui-monospace, Consolas, monospace;
+    --sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.6; }
+  a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 56px 24px 96px; }
+  header.hero { border-bottom: 1px solid var(--line); padding-bottom: 28px; }
+  .kicker { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+  h1 { margin: 6px 0 10px; font-size: clamp(30px, 5vw, 46px); line-height: 1.05; letter-spacing: -.02em; }
+  .lede { color: var(--muted); font-size: 18px; max-width: 800px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .chip { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; color: var(--muted); }
+  .chip a { color: var(--muted); }
+  section { margin-top: 48px; }
+  h2 { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 18px; font-weight: 700; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  h3 { font-size: 18px; margin: 26px 0 10px; }
+  p { margin: 0 0 14px; } ul { margin: 0 0 14px; padding-left: 20px; } li { margin: 5px 0; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--panel2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
+  pre { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 12px; line-height: 1.45; color: var(--muted); }
+  .callout { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--panel); border-radius: 8px; padding: 14px 18px; margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
+  .callout strong { color: var(--text); }
+  .callout.warn { border-left-color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; margin: 0 0 18px; font-size: 13.5px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 700; font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; }
+  .yes { color: var(--accent2); font-weight: 700; } .no { color: var(--bad); font-weight: 700; } .maybe { color: var(--warn); font-weight: 700; }
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  .src { font-size: 13px; color: var(--muted); } .src a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="kicker">Architecture · Distributed System · IaC</div>
+    <h1>Fair N&nbsp;Square on AWS</h1>
+    <p class="lede">Deploying Fair N Square on AWS as a deliberate learning exercise — evolving it into
+      a genuinely distributed system and provisioning it with OpenTofu. The north star: learn real AWS
+      primitives without drowning in ops or blowing past free-tier (~$45–60/mo).</p>
+    <div class="meta-row">
+      <span class="chip">Status: Draft for review</span>
+      <span class="chip">Updated: 2026-06-20</span>
+      <span class="chip"><a href="./index.html">← Docs index</a></span>
+      <span class="chip"><a href="./delivery-plan.html">Delivery plan</a></span>
+      <span class="chip"><a href="./repos.html">Repos</a></span>
+    </div>
+  </header>
+
+  <section>
+    <h2>1 · Goals &amp; guardrails</h2>
+    <ul>
+      <li>Honor the existing architecture: SvelteKit BFF + Auth service + Core service + gRPC + 2 Postgres DBs.</li>
+      <li>Add distributed-system pieces <strong>because a feature needs them</strong>, not for résumé bingo.</li>
+      <li>Keep a low-traffic learning deployment around <strong>$45–60/mo</strong>; set a Budgets alarm at $50 on day one.</li>
+    </ul>
+    <div class="callout">This supersedes the "Fly.io for now" note in the ADRs <em>for the learning track</em>.
+      Fly.io remains a valid simpler fallback if AWS ops becomes a distraction from product work.</div>
+  </section>
+
+  <section>
+    <h2>2 · Compute — why ECS Fargate</h2>
+    <p>Three long-lived services all want persistent connections (gRPC/HTTP2), which fights a
+      request-priced FaaS model.</p>
+    <table>
+      <tr><th>Option</th><th>Verdict</th><th>Why</th></tr>
+      <tr><td><strong>ECS Fargate</strong></td><td class="yes">Recommended</td><td>Real AWS container stack (task defs, services, target groups, IAM task roles, Cloud Map, ALB) without managing nodes/control plane. Spot ~70% off for workers.</td></tr>
+      <tr><td>App Runner</td><td class="no">Wrong fit</td><td>Weak VPC/private-networking, awkward gRPC, hides the networking/IAM you want to learn.</td></tr>
+      <tr><td>EKS</td><td class="no">Overkill</td><td>You'd learn Kubernetes, not "AWS." ~$73/mo control-plane fee, no free tier.</td></tr>
+      <tr><td>Lightsail</td><td class="no">Anti-learning</td><td>A Fly.io-like abstraction that hides AWS — defeats the purpose.</td></tr>
+      <tr><td>EC2 / ECS-on-EC2</td><td class="maybe">Later</td><td>A good second lesson (capacity providers, cheaper compute). Start on Fargate.</td></tr>
+    </table>
+    <p><strong>Decision:</strong> one ECS cluster, Fargate, services <code>bff</code>, <code>auth</code>,
+      <code>core</code>, <code>worker</code>; images in <strong>ECR</strong>.</p>
+    <h3>The gRPC / HTTP2 gotcha</h3>
+    <ul>
+      <li><strong>Browser → BFF:</strong> standard ALB, HTTPS/HTTP2 listener, target group protocol <strong>HTTP1</strong> (SvelteKit Node server is HTTP/1.1).</li>
+      <li><strong>Browsers never speak gRPC directly</strong> — all browser traffic goes to the BFF, which does server-side connectRPC to the Go services.</li>
+      <li><strong>BFF → Auth/Core &amp; service-to-service:</strong> use <strong>Cloud Map</strong> (DNS service discovery, no per-LB hourly charge) over internal ALBs. Add an internal ALB with a <code>GRPC</code> target group later only for that specific lesson. Avoid NLB.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3 · Networking &amp; security</h2>
+    <ul>
+      <li><strong>VPC, 2 AZs.</strong> Public subnets = ALB only. Private subnets = all Fargate tasks + RDS, no public IPs.</li>
+      <li><strong>Egress (big cost lesson):</strong> a NAT Gateway is <strong>~$32/mo + data</strong>. Prefer <strong>VPC interface/gateway endpoints</strong> (ECR api+dkr, S3 gateway [free], Secrets Manager, SSM, CloudWatch Logs) so AWS-internal traffic skips NAT. For tiny envs a <code>t4g.nano</code> NAT instance is often cheapest.</li>
+      <li><strong>TLS:</strong> ACM cert on the ALB HTTPS listener (free, auto-renew). Internal traffic stays plaintext HTTP/2 inside the VPC for now.</li>
+      <li><strong>DNS:</strong> Route 53 hosted zone (~$0.50/mo), ALIAS → ALB.</li>
+      <li><strong>SG chain (least privilege):</strong> <code>ALB(443 world)</code> → <code>BFF(app from ALB SG)</code> → <code>Auth/Core(gRPC from BFF SG)</code> → <code>RDS(5432 from service SGs)</code>.</li>
+      <li><strong>Secrets:</strong> SSM Parameter Store (SecureString, free) for config + most secrets; Secrets Manager for the auto-rotated DB credential.</li>
+      <li><strong>IAM:</strong> a task <em>execution</em> role (pull ECR, read secrets, write logs) + a per-service <em>task</em> role (e.g. Core gets <code>sqs:SendMessage</code> + <code>s3:PutObject</code> on its buckets only).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4 · Data — RDS Postgres, one instance, two DBs</h2>
+    <ul>
+      <li><strong>One <code>db.t4g.micro</code> RDS Postgres, two logical databases</strong> (<code>fairnsquare_auth</code>, <code>fairnsquare_core</code>), each with its own role/connection string. Free tier covers exactly one instance; two logical DBs still honor the ADR's "two databases, no cross-DB joins" boundary.</li>
+      <li>Single-AZ to start (Multi-AZ doubles cost — enable later as the HA lesson).</li>
+      <li><strong>Later distributed lesson:</strong> split Core onto a second instance, optionally Aurora Serverless v2 (scale-to-zero, ~15s resume).</li>
+      <li>Skip RDS Proxy for now (costs money, blocks Aurora auto-pause).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5 · Distributed-system upgrades (tied to real features)</h2>
+    <table>
+      <tr><th>Piece</th><th>What uses it</th><th>Why</th></tr>
+      <tr><td><strong>EventBridge + SQS + Worker</strong></td><td>On expense create/edit/delete, Core emits <code>ExpenseRecorded</code>; rules fan to SQS; a Worker recomputes group balances + reruns debt simplification, then enqueues notifications.</td><td>Decouples writes from expensive recompute; retries + <strong>DLQ</strong> give correctness for a money ledger. <strong>Start here</strong> — nearly free at low volume.</td></tr>
+      <tr><td><strong>SNS</strong></td><td>Notification fan-out (added to group, expense recorded, settle-up reminder) → email/push; SQS for durable in-app.</td><td>Canonical fan-out; pairs with the events above.</td></tr>
+      <tr><td><strong>S3</strong></td><td>Receipt/attachment storage; BFF issues pre-signed PUT URLs so browsers upload directly.</td><td>Textbook object storage; basically free; later S3 events → thumbnail/OCR Lambda.</td></tr>
+      <tr><td><strong>Cloud Map</strong></td><td>Internal gRPC service discovery.</td><td>Your service-discovery lesson.</td></tr>
+      <tr><td><strong>ADOT + X-Ray + CloudWatch</strong></td><td>ADOT Collector sidecar per task; OTel in Go + SvelteKit; traces → X-Ray, metrics/logs → CloudWatch.</td><td>A request browser→BFF→Core→SQS→worker→DB is exactly where distributed tracing earns its keep.</td></tr>
+      <tr><td>ElastiCache (Redis/Valkey)</td><td><em>Defer.</em> Cache balances; idempotency keys for SQS consumers; rate-limit state.</td><td>Real uses, but ~$12/mo and not needed yet.</td></tr>
+    </table>
+    <p class="callout"><strong>Skip for now:</strong> Step Functions, App Mesh, multi-region, DynamoDB (data is relational), API Gateway (ALB + BFF covers the edge).</p>
+  </section>
+
+  <section>
+    <h2>6 · Target architecture diagram</h2>
+<pre>                          Internet
+                             │  HTTPS/HTTP2 (ACM cert)
+                             ▼
+                      ┌───────────────┐
+   Route 53 ─────────▶│  Public ALB   │   (public subnets, 2 AZs)
+   (ALIAS)            └───────┬───────┘
+─────────────────────────────┼──────────────────────────────  PUBLIC TIER
+                             │  HTTP/1.1  (TG protocol HTTP1)
+                             ▼
+                   ┌──────────────────┐
+                   │ SvelteKit BFF/SSR│  (Fargate, private subnet)
+                   │  + ADOT sidecar  │   owns sessions (Better Auth)
+                   └───┬──────────┬───┘
+        connectRPC/    │          │   connectRPC/gRPC (HTTP2)
+        gRPC (HTTP2)   │          │   via Cloud Map DNS
+        via Cloud Map  ▼          ▼
+            ┌──────────────┐  ┌──────────────┐
+            │ Auth Service │  │ Core Service │   (Fargate, private subnets)
+            │ Go + ADOT    │◀▶│ Go + ADOT    │   svc-to-svc gRPC (JWK validate)
+            └──────┬───────┘  └──┬────────┬──┘
+                   │ 5432        │ 5432   │ emits events
+                   ▼             ▼        ▼
+            ┌────────────────────────┐  ┌─────────────────┐
+            │  RDS Postgres (1 inst) │  │   EventBridge    │
+            │  ├ auth DB             │  │   (event router) │
+            │  └ core DB             │  └───┬─────────┬────┘
+            └────────────────────────┘      │ rules   │
+─────────────────────────────────────────  │         │  ───── PRIVATE / DATA TIER
+   (all private subnets, SG-chained)        ▼         ▼
+                                       ┌────────┐  ┌────────┐
+                                       │  SQS   │  │  SNS   │
+                                       │ balance│  │ notify │
+                                       │ recalc │  │ fanout │
+                                       └───┬────┘  └────────┘
+                                           ▼
+                                   ┌──────────────────┐
+                                   │ Worker (Fargate) │  recompute balances,
+                                   │  ledger/settle   │  debt-simplification
+                                   └──────────────────┘
+
+  Side stores:  S3 (receipt attachments, pre-signed URLs from BFF)
+  Egress:       VPC interface/gateway endpoints (ECR, S3, Secrets, Logs) — no NAT
+  Secrets:      SSM Parameter Store / Secrets Manager → injected via task exec role
+  Telemetry:    ADOT sidecars → X-Ray (traces) + CloudWatch (metrics/logs)
+  Edge TLS:     ACM on ALB;  DNS: Route 53</pre>
+  </section>
+
+  <section>
+    <h2>7 · Provisioning with OpenTofu</h2>
+    <div class="callout"><strong>Use OpenTofu, not Terraform.</strong> For an open-source learning
+      project: MPL 2.0 under the Linux Foundation (vs HashiCorp's BSL), drop-in HCL/provider/state
+      compatibility, plus features Terraform lacks that help here — native state encryption,
+      write-only/ephemeral attributes. Pin the CLI + <code>hashicorp/aws</code> provider versions.</div>
+    <h3>Repo &amp; layout — a dedicated <code>infra</code> repo</h3>
+    <p>Infra is cross-cutting; don't fragment it across service repos. App code stays in service repos;
+      their CI pushes images to ECR and triggers deploys.</p>
+<pre>infra/
+├── bootstrap/                  # one-time: S3 state bucket + KMS (local backend)
+├── modules/
+│   ├── networking/            # VPC, public+private subnets, IGW, endpoints, SGs
+│   ├── ecr/                   # repos: bff, auth, core, worker
+│   ├── alb/                   # ALB, HTTPS listener, ACM, target groups
+│   ├── ecs-cluster/
+│   ├── ecs-service/           # reusable: task def + service + TG + autoscaling
+│   ├── rds/                   # reusable Postgres (auth_db, core_db)
+│   ├── messaging/             # EventBridge bus + rules, SQS queues + DLQ, SNS topics
+│   └── secrets/               # SSM/Secrets Manager containers + IAM access
+├── environments/
+│   ├── dev/   (backend.tf  main.tf  variables.tf  dev.tfvars  outputs.tf)
+│   ├── staging/               # add later
+│   └── prod/                  # add later
+├── .github/workflows/  (plan.yml on PR, apply.yml on merge — env-gated)
+└── .tflint.hcl</pre>
+    <ul>
+      <li><strong>Environment separation:</strong> directory-per-env (explicit, safe blast radius). Avoid workspaces; skip Terragrunt (overkill for 1–2 devs). Start with just <code>dev</code>.</li>
+      <li><strong>Reused modules:</strong> <code>ecs-service</code> (×4 services) and <code>rds</code> (×1, two DBs) are parameterized and called multiple times.</li>
+    </ul>
+    <h3>Remote state &amp; locking</h3>
+    <ul>
+      <li><strong>S3 backend with native lockfile</strong> — <code>use_lockfile = true</code> (GA). <strong>No DynamoDB lock table</strong> (deprecated).</li>
+      <li>Bucket: versioning on, public access blocked, SSE-KMS, TLS-enforced, access restricted to the CI role + admins. Optionally layer OpenTofu native state encryption on top.</li>
+      <li><strong>Bootstrap the chicken-and-egg:</strong> a <code>bootstrap/</code> root creates bucket+KMS with a local backend, apply once, then migrate env roots to the S3 backend.</li>
+    </ul>
+    <h3>Secrets without leaking into state</h3>
+    <ol>
+      <li><strong>Don't let Tofu hold the secret</strong> — create empty Secrets Manager / SSM SecureString containers; populate out-of-band; ECS reads at runtime via task-def <code>secrets</code> (valueFrom = ARN).</li>
+      <li><strong>RDS:</strong> <code>manage_master_user_password = true</code> → RDS + Secrets Manager manage/rotate it; Tofu never sees it (prefer over <code>random_password</code>, which stores plaintext in state).</li>
+      <li>OpenTofu write-only/ephemeral attributes for must-pass-through secrets; mark vars <code>sensitive</code>; never commit real <code>*.tfvars</code>.</li>
+    </ol>
+    <h3>CI/CD — GitHub Actions + OIDC (no long-lived keys)</h3>
+    <ul>
+      <li><strong>OIDC federation:</strong> IAM OIDC provider + role trust-scoped to <code>repo:fair-n-square-co/infra:*</code>; <code>aws-actions/configure-aws-credentials</code> with <code>role-to-assume</code> + <code>id-token: write</code>.</li>
+      <li><strong>PR → plan:</strong> <code>fmt -check</code>, <code>validate</code>, <strong>tflint</strong> + <strong>trivy</strong>, <code>tofu plan -out=tfplan</code>, post summary as PR comment, upload encrypted plan artifact.</li>
+      <li><strong>Merge → apply:</strong> download the <em>same</em> plan artifact and <code>tofu apply tfplan</code>. Gate prod behind a GitHub Environment with required reviewers; <code>concurrency</code> groups per env.</li>
+      <li>Skip Atlantis/Spacelift/TFC for now (overkill for two people).</li>
+    </ul>
+    <h3>Build order</h3>
+    <p>1. Bootstrap state → 2. OIDC + IAM → 3. Networking → 4. Data (RDS + ECR) → 5. Edge + services
+      (ACM/Route53, ALB, cluster, ×4 ecs-service) → 6. Messaging (EventBridge/SQS/SNS + Worker) → 7. CI.</p>
+    <h3>Gotchas for this stack</h3>
+    <ul>
+      <li><strong>ECS task-def churn:</strong> Tofu owns infrastructure; the app pipeline owns image/task-def revision; set <code>lifecycle { ignore_changes = [task_definition] }</code>.</li>
+      <li><strong>ALB + gRPC:</strong> target group <code>protocol_version = "GRPC"</code> (default HTTP/1.1 silently fails gRPC); gRPC health-check matcher (status <code>0</code>/<code>12</code>).</li>
+      <li><strong>RDS:</strong> private subnets, DB subnet group ≥2 AZs, SG-to-SG ingress, no public IP.</li>
+      <li><strong>ACM/Route53:</strong> DNS validation + <code>aws_acm_certificate_validation</code>; cert in the ALB's region; first apply hangs a few min.</li>
+      <li><strong>NAT cost:</strong> single NAT gateway / NAT instance / VPC endpoints; <code>tofu destroy</code> dev when idle.</li>
+      <li><strong>Fargate:</strong> <code>awsvpc</code> networking (each task = an ENI); <code>enable_execute_command</code> for debug; <code>deployment_circuit_breaker</code> with rollback; RDS <code>deletion_protection</code> off in dev so <code>destroy</code> works.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>8 · Suggested learning progression</h2>
+    <ol>
+      <li><strong>Foundations</strong> — ECR + one Fargate service (BFF) behind a public ALB, ACM + Route 53, Budgets alarm.</li>
+      <li><strong>VPC done right</strong> — private subnets, SG chains, VPC endpoints instead of NAT.</li>
+      <li><strong>Data</strong> — RDS Postgres (free tier), two DBs, secrets in Parameter Store, task roles.</li>
+      <li><strong>Service mesh-lite</strong> — add Auth + Core as Fargate services, Cloud Map for internal gRPC.</li>
+      <li><strong>Observability</strong> — ADOT sidecars → X-Ray + CloudWatch, Container Insights.</li>
+      <li><strong>Async (the real leap)</strong> — EventBridge + SQS + Worker for balance recalc / debt simplification, with DLQ + idempotency.</li>
+      <li><strong>Attachments + notifications</strong> — S3 pre-signed uploads; SNS fan-out.</li>
+      <li><strong>Optional advanced</strong> — Aurora Serverless v2 for Core, ElastiCache, Multi-AZ RDS, ECS-on-EC2, internal ALB with <code>GRPC</code> target group.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>9 · Cost reality (low-traffic, us-east-1)</h2>
+    <table>
+      <tr><th>Service</th><th>Free tier?</th><th>Rough monthly</th></tr>
+      <tr><td>ECS Fargate (3–4 small tasks)</td><td class="no">No</td><td>~$25–35 (Spot for worker; scale to 1 task)</td></tr>
+      <tr><td>Public ALB</td><td class="no">No</td><td>~$16–18</td></tr>
+      <tr><td>RDS db.t4g.micro single-AZ</td><td class="yes">Yes (12 mo)</td><td>$0 → ~$12–15</td></tr>
+      <tr><td>NAT Gateway</td><td class="no">No</td><td>~$32 ⚠️ — avoid via VPC endpoints</td></tr>
+      <tr><td>ECR / Route 53 / ACM</td><td class="maybe">partial / no / free</td><td>~$0–1 / ~$0.50 / $0</td></tr>
+      <tr><td>SQS / SNS / EventBridge</td><td class="yes">generous</td><td>~$0</td></tr>
+      <tr><td>S3 / CloudWatch / X-Ray</td><td class="maybe">partial</td><td>~$0–3</td></tr>
+      <tr><td>ElastiCache (if added)</td><td class="no">No</td><td>~$12</td></tr>
+    </table>
+    <div class="callout warn"><strong>Lean learning setup ≈ $45–60/mo.</strong> The two biggest levers:
+      the ALB (~$18) and avoiding NAT (~$32). Set a Budgets alarm at $50 first.</div>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <p class="src">
+      <a href="https://cloudonaut.io/fargate-vs-apprunner/">Fargate vs App Runner</a> ·
+      <a href="https://aws.amazon.com/blogs/aws/new-application-load-balancer-support-for-end-to-end-http-2-and-grpc">ALB HTTP/2 + gRPC</a> ·
+      <a href="https://containersonaws.com/pattern/service-discovery-fargate-microservice-cloud-map/">Cloud Map for Fargate</a> ·
+      <a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2-auto-pause.html">Aurora v2 auto-pause</a> ·
+      <a href="https://arpadt.com/articles/eb-sns-sqs">EventBridge vs SNS vs SQS</a> ·
+      <a href="https://aws-otel.github.io/docs/setup/ecs/">ADOT on ECS</a> ·
+      <a href="https://encore.dev/articles/opentofu-vs-terraform-2026">OpenTofu vs Terraform 2026</a> ·
+      <a href="https://www.bschaatsbergen.com/s3-native-state-locking">S3 native state locking</a> ·
+      <a href="https://www.firefly.ai/academy/integrating-oidc-with-github-action-to-manage-terraform-deployment-on-aws">GitHub OIDC + AWS</a> ·
+      <a href="https://oneuptime.com/blog/post/2025-12-18-terraform-avoid-secrets-in-state/view">Secrets in TF state</a>
+    </p>
+  </section>
+
+  <footer>
+    Source: <code>fair-n-square-co/docs</code> · <a href="./index.html">← Back to docs index</a> ·
+    Companion markdown: <code>aws-architecture.md</code>
+  </footer>
+
+</div>
+</body>
+</html>

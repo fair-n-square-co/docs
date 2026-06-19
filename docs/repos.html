@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fair N Square — Repository Roundup &amp; Cleanup</title>
+<style>
+  :root {
+    --bg: #0e1116; --panel: #161b22; --panel2: #1c2230; --line: #2a313c;
+    --text: #e6edf3; --muted: #9aa7b4; --accent: #4f8cff; --accent2: #6ee7b7;
+    --warn: #f2cc60; --bad: #f47272;
+    --mono: "SFMono-Regular", ui-monospace, Consolas, monospace;
+    --sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.6; }
+  a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 56px 24px 96px; }
+  header.hero { border-bottom: 1px solid var(--line); padding-bottom: 28px; }
+  .kicker { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+  h1 { margin: 6px 0 10px; font-size: clamp(30px, 5vw, 46px); line-height: 1.05; letter-spacing: -.02em; }
+  .lede { color: var(--muted); font-size: 18px; max-width: 800px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .chip { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; color: var(--muted); }
+  .chip a { color: var(--muted); }
+  section { margin-top: 48px; }
+  h2 { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 18px; font-weight: 700; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  h3 { font-size: 18px; margin: 26px 0 10px; }
+  p { margin: 0 0 14px; } ul, ol { margin: 0 0 14px; padding-left: 20px; } li { margin: 5px 0; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--panel2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
+  .callout { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--panel); border-radius: 8px; padding: 14px 18px; margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
+  .callout strong { color: var(--text); }
+  table { width: 100%; border-collapse: collapse; margin: 0 0 18px; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 700; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+  td code { white-space: nowrap; }
+  .v { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; padding: 2px 7px; border-radius: 5px; text-transform: uppercase; white-space: nowrap; }
+  .v-keep { background: rgba(110,231,183,.16); color: var(--accent2); }
+  .v-new { background: rgba(79,140,255,.16); color: var(--accent); }
+  .v-arch { background: rgba(242,204,96,.16); color: var(--warn); }
+  .v-del { background: rgba(244,114,182,.18); color: #f472b6; }
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="kicker">Org Audit · Cleanup</div>
+    <h1>Repository Roundup</h1>
+    <p class="lede">An audit of the <code>fair-n-square-co</code> GitHub org — what each repo is for,
+      what's needed, and what to clean up. Goal: from 13 repos down to ~8 active (+2 archived).</p>
+    <div class="meta-row">
+      <span class="chip">Status: Draft for review</span>
+      <span class="chip">Updated: 2026-06-20</span>
+      <span class="chip"><a href="./index.html">← Docs index</a></span>
+      <span class="chip"><a href="./delivery-plan.html">Delivery plan</a></span>
+      <span class="chip"><a href="./aws-architecture.html">AWS architecture</a></span>
+    </div>
+  </header>
+
+  <section>
+    <h2>1 · Inventory (13 repos)</h2>
+    <table>
+      <tr><th>Repo</th><th>Purpose (inferred)</th><th>Lang</th><th>Last push</th><th>Verdict</th></tr>
+      <tr><td><code>webapp</code></td><td>SvelteKit UI + BFF + Better Auth login (drizzle, storybook, playwright, husky)</td><td>TS</td><td>2025-12-15</td><td><span class="v v-keep">Keep</span> canonical frontend</td></tr>
+      <tr><td><code>apis</code></td><td>Proto/contracts: buf + connectRPC, generated Go+TS</td><td>TS</td><td>2025-12-13</td><td><span class="v v-keep">Keep</span> + rename → <code>proto</code></td></tr>
+      <tr><td><code>docs</code></td><td>ADRs, roadmap, product spec, diagrams (this repo)</td><td>—</td><td>2026-06-19</td><td><span class="v v-keep">Keep</span></td></tr>
+      <tr><td><code>ledger</code></td><td>Ledger/transactions service — sqlc + goose</td><td>Go</td><td>2026-03-18</td><td><span class="v v-arch">Fold</span> into <code>core</code></td></tr>
+      <tr><td><code>e2e</code></td><td>Cross-service E2E tests + K8s manifests + docker-compose</td><td>Go</td><td>2026-03-18</td><td><span class="v v-keep">Keep</span> (move infra bits out)</td></tr>
+      <tr><td><code>auth-api</code></td><td>Intended Auth Service (Go) — README is verbatim "Go API Template"; an unmodified bootstrap</td><td>Go</td><td>2025-09-30</td><td><span class="v v-keep">Keep</span> but reset — barely started</td></tr>
+      <tr><td><code>jwt-service</code></td><td>Throwaway: create a JWT for testing via Firebase, single <code>jwt.go</code></td><td>Go</td><td>2026-06-17</td><td><span class="v v-del">Merge→Delete</span></td></tr>
+      <tr><td><code>transactions</code></td><td>Legacy v0 backend (GORM + Atlas + Fly). Makefile style reference</td><td>Go</td><td>2024-08</td><td><span class="v v-arch">Archive</span></td></tr>
+      <tr><td><code>web-app</code></td><td>Old Next.js frontend attempt</td><td>TS</td><td>2025-09-29</td><td><span class="v v-del">Delete</span> (after archive)</td></tr>
+      <tr><td><code>app</code></td><td>Old Flutter mobile bootstrap</td><td>Dart</td><td>2024-05-23</td><td><span class="v v-arch">Archive</span> (mobile is post-MVP)</td></tr>
+      <tr><td><code>codecov-login</code></td><td>Throwaway Codecov OAuth helper, single <code>main.go</code></td><td>Go</td><td>2024-04-25</td><td><span class="v v-del">Delete</span></td></tr>
+      <tr><td><code>demo-repository</code></td><td>GitHub default demo template, never used</td><td>HTML</td><td>2024-03-18</td><td><span class="v v-del">Delete</span></td></tr>
+      <tr><td><code>.github</code></td><td>Org profile</td><td>—</td><td>2024-03-18</td><td><span class="v v-keep">Keep</span> — flesh out</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>2 · Mapping to the target architecture (+ gaps)</h2>
+    <table>
+      <tr><th>Component (from ADRs)</th><th>Repo home</th><th>Status</th></tr>
+      <tr><td>SvelteKit UI + BFF (+ Better Auth login)</td><td><code>webapp</code></td><td>✅</td></tr>
+      <tr><td>Auth Service (Go) — profiles, JWKs, M2M, ReBAC</td><td><code>auth-api</code></td><td>⚠️ exists but an empty template; needs real implementation</td></tr>
+      <tr><td><strong>Core Service</strong> (Go modular monolith) — groups, friends, expenses, settlement, ledger</td><td><strong>— gap —</strong></td><td>❌ No <code>core</code> repo. <code>ledger</code> covers only the ledger slice.</td></tr>
+      <tr><td>Proto / contracts</td><td><code>apis</code> → <code>proto</code></td><td>✅</td></tr>
+      <tr><td>Two Postgres DBs (Auth, Core)</td><td>inside <code>auth-api</code> + <code>core</code></td><td>✅ sqlc/goose migrations</td></tr>
+      <tr><td>Docs</td><td><code>docs</code></td><td>✅</td></tr>
+      <tr><td><strong>Infra / OpenTofu</strong></td><td><strong>— gap —</strong></td><td>❌ No infra repo. K8s manifests currently live in <code>e2e</code>.</td></tr>
+      <tr><td>E2E</td><td><code>e2e</code></td><td>✅</td></tr>
+    </table>
+    <div class="callout"><strong>Two gaps to create:</strong>
+      <br>1. <code>core</code> — the Core Service; fold <code>ledger</code> into it as a module.
+      <em>ADR-2 says "treat core service as a monolith… don't break into smaller services" — a separate <code>ledger</code> repo contradicts that.</em>
+      <br>2. <code>infra</code> — OpenTofu/AWS + k8s + reusable CI/CD (see <a href="./aws-architecture.html">AWS architecture</a>); move K8s manifests out of <code>e2e</code>.</div>
+  </section>
+
+  <section>
+    <h2>3 · Cleanup plan (safe order — back up first)</h2>
+    <ol>
+      <li><strong>Archive</strong> (reversible, keeps history &amp; references): <code>transactions</code> (Makefile reference stays accessible), <code>app</code>, <code>web-app</code>.</li>
+      <li><strong>Salvage then remove <code>jwt-service</code>:</strong> move <code>jwt.go</code> into <code>e2e</code> test helpers or <code>webapp</code> dev tooling, commit, then archive/delete.</li>
+      <li><strong>Back up private/unique repos</strong> before any delete: <code>git clone --mirror</code> <code>jwt-service</code> + <code>codecov-login</code> into <code>.tmp/</code>.</li>
+      <li><strong>Delete dead repos</strong> (zero reusable value): <code>codecov-login</code>, <code>demo-repository</code>. (Archiving is also fine and safer.)</li>
+      <li><strong>Rename</strong> <code>apis</code> → <code>proto</code> (GitHub auto-redirects; update buf module paths + imports).</li>
+      <li><strong>Create</strong> <code>core</code> and <code>infra</code>; fold <code>ledger</code> into <code>core</code>, then archive <code>ledger</code>.</li>
+    </ol>
+    <div class="callout"><strong>GitHub repo deletion is irreversible</strong> — archive when in doubt. Verify archived/private flags before acting.</div>
+  </section>
+
+  <section>
+    <h2>4 · Recommended final layout</h2>
+    <table>
+      <tr><th>Repo</th><th>One-line purpose</th></tr>
+      <tr><td><code>webapp</code></td><td>SvelteKit UI + BFF; hosts Better Auth login &amp; sessions</td></tr>
+      <tr><td><code>auth-api</code> <span class="v v-arch">rename?</span></td><td>Go Auth Service: profiles, JWKs, M2M tokens, ReBAC</td></tr>
+      <tr><td><code>core</code> <span class="v v-new">new</span></td><td>Go modular-monolith Core Service: groups, friends, expenses, settlement, ledger</td></tr>
+      <tr><td><code>proto</code> <span class="v v-new">renamed</span></td><td>Buf/connectRPC contracts + generated Go/TS clients</td></tr>
+      <tr><td><code>infra</code> <span class="v v-new">new</span></td><td>OpenTofu/AWS + k8s + reusable CI/CD workflows</td></tr>
+      <tr><td><code>e2e</code></td><td>Cross-service E2E tests</td></tr>
+      <tr><td><code>docs</code></td><td>ADRs, roadmap, product spec, diagrams</td></tr>
+      <tr><td><code>.github</code></td><td>Org profile + shared community-health files</td></tr>
+    </table>
+    <p><strong>Archived (reference only):</strong> <code>transactions</code>, <code>app</code>.
+       <strong>Deleted:</strong> <code>web-app</code>, <code>ledger</code> (after merge), <code>jwt-service</code>, <code>codecov-login</code>, <code>demo-repository</code>.</p>
+  </section>
+
+  <section>
+    <h2>5 · Multi-repo vs monorepo</h2>
+    <p>Your <strong>ADR-2 already accepts</strong> "a lot of boilerplate to manage multiple repos" and
+      "longer to set up CI/CD for multiple services" <em>as negatives taken on for the learning value</em>.
+      That's the deciding factor.</p>
+    <ul>
+      <li><strong>Keep multi-repo</strong> if learning multi-service CI/CD, cross-repo proto publishing, and independent deploys is the goal — higher learning, higher overhead.</li>
+      <li><strong>Go monorepo</strong> to ship the MVP faster — eliminates cross-repo proto-versioning pain (brutal for 1–2 people) while still building independent service containers.</li>
+    </ul>
+    <div class="callout"><strong>Concrete recommendation:</strong> monorepo for code
+      (<code>core</code>, <code>auth</code>, <code>webapp</code>, <code>proto</code>, <code>infra</code>,
+      <code>e2e</code> as top-level dirs) + keep <code>docs</code> separate. ~90% of the architectural
+      learning without the cross-repo coordination tax that dominates solo work. If you specifically
+      want the cross-repo contract-publishing lesson, keep <code>proto</code> split out and monorepo the rest.</div>
+  </section>
+
+  <footer>
+    Inventory gathered via <code>gh repo list fair-n-square-co</code> on 2026-06-20 ·
+    <a href="./index.html">← Back to docs index</a> · Companion markdown: <code>repos.md</code>
+  </footer>
+
+</div>
+</body>
+</html>

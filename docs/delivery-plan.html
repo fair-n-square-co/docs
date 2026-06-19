@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fair N Square — Delivery Plan & MVP</title>
+<style>
+  :root {
+    --bg: #0e1116; --panel: #161b22; --panel2: #1c2230; --line: #2a313c;
+    --text: #e6edf3; --muted: #9aa7b4; --accent: #4f8cff; --accent2: #6ee7b7;
+    --warn: #f2cc60; --done: #6ee7b7;
+    --mono: "SFMono-Regular", ui-monospace, Consolas, monospace;
+    --sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.6; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 56px 24px 96px; }
+
+  header.hero { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 8px; }
+  .kicker { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+  h1 { margin: 6px 0 10px; font-size: clamp(30px, 5vw, 48px); line-height: 1.04; letter-spacing: -.02em; }
+  .lede { color: var(--muted); font-size: 18px; max-width: 760px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .chip { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; color: var(--muted); }
+  .chip a { color: var(--muted); }
+
+  section { margin-top: 48px; }
+  h2 { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 18px; font-weight: 700; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  h3 { font-size: 19px; margin: 28px 0 10px; letter-spacing: -.01em; }
+  h4 { font-size: 15px; margin: 18px 0 8px; font-family: var(--mono); color: var(--accent2); }
+  p { margin: 0 0 14px; }
+  ul { margin: 0 0 14px; padding-left: 20px; } li { margin: 4px 0; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--panel2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
+  pre { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+
+  .callout { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--panel); border-radius: 8px; padding: 14px 18px; margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
+  .callout strong { color: var(--text); }
+  .thesis { border-left-color: var(--accent2); }
+
+  table { width: 100%; border-collapse: collapse; margin: 0 0 18px; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 700; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+  td code { white-space: nowrap; }
+
+  /* badges */
+  .b { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; padding: 2px 8px; border-radius: 5px; text-transform: uppercase; }
+  .b-done { background: rgba(110,231,183,.16); color: var(--accent2); }
+  .b-core { background: rgba(79,140,255,.16); color: var(--accent); }
+  .b-feat { background: rgba(242,204,96,.16); color: var(--warn); }
+  .b-launch { background: rgba(244,114,182,.18); color: #f472b6; }
+  .b-post { background: rgba(154,167,180,.16); color: var(--muted); }
+
+  /* stage cards */
+  .stage { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); padding: 18px 22px; margin: 14px 0; }
+  .stage > .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .stage .num { font-family: var(--mono); color: var(--accent); font-size: 13px; }
+  .stage h3 { margin: 0; font-size: 18px; }
+  .stage .check { color: var(--muted); font-size: 13.5px; border-top: 1px dashed var(--line); margin-top: 12px; padding-top: 10px; }
+  .stage .check b { color: var(--accent2); }
+  .milestone { border: 1px solid var(--accent2); background: linear-gradient(180deg, rgba(110,231,183,.08), rgba(110,231,183,.02)); border-radius: 12px; padding: 14px 20px; margin: 18px 0; }
+  .milestone h3 { margin: 0; color: var(--accent2); font-size: 17px; }
+
+  .tkt { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  .back { font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="kicker">Delivery Plan</div>
+    <h1>Fair N&nbsp;Square — MVP &amp; Stages</h1>
+    <p class="lede">The bigger picture, a crisply-scoped MVP, and the dependency-ordered stages that
+      get us there and beyond — distilled from the ROADMAP, ADRs, and the live Jira board.</p>
+    <div class="meta-row">
+      <span class="chip">Status: Draft for review</span>
+      <span class="chip">Updated: 2026-06-20</span>
+      <span class="chip"><a href="./index.html">← Docs index</a></span>
+      <span class="chip"><a href="./aws-architecture.html">AWS architecture</a></span>
+      <span class="chip"><a href="./repos.html">Repos</a></span>
+      <span class="chip"><a href="https://github.com/fair-n-square-co/docs/blob/main/ROADMAP.md">ROADMAP</a></span>
+    </div>
+  </header>
+
+  <!-- 1. BIGGER PICTURE -->
+  <section>
+    <h2>1 · The Bigger Picture</h2>
+    <p><strong>What we're building.</strong> Fair N Square is an open-source, free expense-splitting
+      app (a Splitwise alternative) built deliberately with enterprise-grade architecture. There are
+      <strong>two intertwined goals</strong> worth keeping distinct:</p>
+    <ul>
+      <li><strong>Product goal</strong> — ship a genuinely useful expense splitter: groups, friends,
+        expenses, splits, balances, settle-up, debt simplification.</li>
+      <li><strong>Learning goal</strong> — build complex systems with real boundaries: a SvelteKit BFF,
+        a separate Auth service and Core service, gRPC/connectRPC, Postgres, CI/CD, observability —
+        deployed for real on free tiers.</li>
+    </ul>
+    <p>These goals pull against each other on speed. The strategy below resolves that:
+      <strong>honor the real architecture, but cut a thin vertical slice through it first</strong>,
+      then harden and widen.</p>
+
+    <h3>Target architecture</h3>
+<pre>            ┌────────────────────────────────────────────────────────────┐
+  Browser ──┤  SvelteKit (UI + BFF/SSR)  — owns sessions, renders data     │
+            └───────────────┬───────────────────────────┬────────────────┘
+                            │ gRPC/connectRPC            │ gRPC/connectRPC
+                   ┌────────▼─────────┐         ┌────────▼─────────┐
+                   │  Auth Service    │◄────────│  Core Service    │
+                   │  (Go)            │  M2M    │  (Go, modular     │
+                   │  Better Auth,    │  token  │  monolith)        │
+                   │  profiles, JWKs, │         │  groups, friends, │
+                   │  FGA (future)    │         │  expenses, ledger,│
+                   └────────┬─────────┘         │  settlement, todos│
+                            │                   └────────┬──────────┘
+                       ┌────▼────┐                  ┌────▼────┐
+                       │ Auth DB │                  │ Core DB │
+                       └─────────┘                  └─────────┘</pre>
+    <p class="tkt">Source ADRs:
+      <a href="https://github.com/fair-n-square-co/docs/blob/main/design/records/2-system-design-v1.md">system-design-v1</a> ·
+      <a href="https://github.com/fair-n-square-co/docs/blob/main/design/records/1-use-sveltekit-for-frontend.md">sveltekit</a> ·
+      <a href="https://github.com/fair-n-square-co/docs/blob/main/design/records/3-use-betterauth-for-auth.md">better-auth</a></p>
+
+    <h3>Where we are today</h3>
+    <p>Already <span class="b b-done">Done</span> (per Jira FNS):</p>
+    <ul>
+      <li>Local dev environment &amp; tooling <span class="tkt">FNS-2</span></li>
+      <li>Third-party service selection — Better Auth, Postgres, Fly.io <span class="tkt">FNS-3</span></li>
+      <li>Repository &amp; proto structure <span class="tkt">FNS-4</span></li>
+      <li>Auth service project scaffold <span class="tkt">FNS-8</span></li>
+      <li>SvelteKit project setup <span class="tkt">FNS-15</span></li>
+      <li>Authentication UI (login/signup screens) <span class="tkt">FNS-16</span></li>
+    </ul>
+    <div class="callout"><strong>In short:</strong> scaffolding exists; no end-to-end feature works yet.
+      The auth flow isn't wired to a real backend, the Core service hasn't been created, and there's
+      no database schema or deployment. <strong>Stage 0 is the bottleneck.</strong></div>
+  </section>
+
+  <!-- 2. MVP -->
+  <section>
+    <h2>2 · MVP Definition</h2>
+    <div class="callout thesis"><strong>MVP thesis:</strong> a user can sign up, connect with friends,
+      create a group, record shared expenses (split equally / by exact amounts / by percentage), see
+      who owes whom, simplify the debts, and settle up — running on the real two-service gRPC
+      architecture, deployed publicly.</div>
+
+    <h3>In scope for MVP</h3>
+    <table>
+      <tr><th>Area</th><th>Included</th></tr>
+      <tr><td>Identity</td><td>Email/password + OAuth sign-up &amp; login (Better Auth), sessions in the BFF, basic profile</td></tr>
+      <tr><td>Authorization</td><td><strong>Simple ownership/membership checks</strong> (am I a member of this group?). <em>Not</em> full ReBAC.</td></tr>
+      <tr><td>Social graph</td><td>Friend requests (pending/accepted/rejected), groups, add/remove members</td></tr>
+      <tr><td>Expenses</td><td>Add/edit/delete expense; split <strong>equal / exact / percentage</strong>; notes</td></tr>
+      <tr><td>Money</td><td>Balance engine (who owes whom), settle-up, <strong>debt simplification</strong></td></tr>
+      <tr><td>Multi-currency</td><td>Expenses in different currencies with conversion <span class="b b-feat">stage 5</span></td></tr>
+      <tr><td>Attachments &amp; comments</td><td>Receipt photo/PDF upload + comments on expenses <span class="b b-feat">stage 5</span></td></tr>
+      <tr><td>Group todos</td><td>Group todo lists with task assignment <span class="b b-feat">stage 5</span></td></tr>
+      <tr><td>Platform</td><td>Containerized, deployed to Fly.io, basic logging + health checks, core E2E tests</td></tr>
+    </table>
+    <div class="callout">The last four feature rows were explicitly requested as part of the MVP. They
+      are real work, so they're sequenced into a dedicated <strong>MVP-Features</strong> stage
+      <em>after</em> the core money loop is proven — they extend the core rather than block it.</div>
+
+    <h3>Explicitly OUT of MVP → deferred to Post-MVP</h3>
+    <ul>
+      <li>Full fine-grained authorization / ReBAC (OpenFGA / Permit.io) — MVP uses simple membership checks</li>
+      <li>Distributed tracing, full metrics dashboards, alerting/on-call, SLAs</li>
+      <li>Advanced reporting, analytics, CSV/PDF export · transaction categories</li>
+      <li>Push notifications, in-app chat · native mobile apps, offline support, MCP server</li>
+      <li>Performance/load testing, formal security audit &amp; penetration testing</li>
+    </ul>
+
+    <h3>MVP success criteria</h3>
+    <ul>
+      <li>Multiple real users can sign up and use the system end-to-end.</li>
+      <li>The full money loop (expense → balance → simplify → settle) is correct and verifiable.</li>
+      <li>The app is publicly reachable, mobile-responsive, and survives a redeploy.</li>
+      <li>Core flows are covered by automated E2E tests in CI.</li>
+    </ul>
+  </section>
+
+  <!-- 3. STAGES -->
+  <section>
+    <h2>3 · Delivery Stages</h2>
+    <p>Stages are ordered by dependency; each ends at a demoable checkpoint. Stages 0–6 are the MVP.</p>
+
+    <div class="stage">
+      <div class="head"><span class="num">Stage 0</span><h3>Foundation completion</h3><span class="b b-core">unblocks everything</span></div>
+      <ul>
+        <li><strong>Repo hygiene</strong> (see <a href="./repos.html">repos</a>): create <code>core</code> (fold in <code>ledger</code>), create <code>infra</code>, rename <code>apis</code> → <code>proto</code>, archive/delete dead repos. <code>auth-api</code> is still a "Go API Template" — Stage 1 is greenfield there.</li>
+        <li>Database setup: Auth DB + Core DB schemas, Drizzle/goose migrations, pooling <span class="tkt">FNS-5</span></li>
+        <li>Core service scaffold: Go + gRPC/connectRPC server, proto layout, DB wiring <span class="tkt">FNS-25</span></li>
+        <li>CI/CD: build + test + lint pipelines per service <span class="tkt">FNS-6</span></li>
+        <li>Local stack: <code>docker-compose</code> for Postgres + services <span class="tkt">FNS-601 (partial)</span></li>
+      </ul>
+      <div class="check"><b>Checkpoint:</b> every service builds in CI; <code>docker-compose up</code> brings the stack up locally.</div>
+    </div>
+
+    <div class="stage">
+      <div class="head"><span class="num">Stage 1</span><h3>Auth &amp; Identity</h3><span class="b b-core">MVP</span></div>
+      <ul>
+        <li>Better Auth in the SvelteKit BFF: sign-up, login, OAuth, sessions <span class="tkt">FNS-9, FNS-11</span></li>
+        <li>User profile CRUD in Auth service + profile UI <span class="tkt">FNS-10, FNS-17</span></li>
+        <li>M2M token service; JWK hosting/validation <span class="tkt">FNS-13</span></li>
+        <li>Core ↔ Auth integration layer: token validation, user context <span class="tkt">FNS-26</span></li>
+      </ul>
+      <div class="check"><b>Checkpoint:</b> a user signs up, logs in, edits their profile; Core can validate a request's identity.</div>
+    </div>
+
+    <div class="stage">
+      <div class="head"><span class="num">Stage 2</span><h3>Groups &amp; Friends</h3><span class="b b-core">MVP</span></div>
+      <ul>
+        <li>Friends backend (request/accept/reject) + UI <span class="tkt">FNS-28, FNS-20</span></li>
+        <li>Groups backend (CRUD, membership, settings, soft-delete) + UI <span class="tkt">FNS-27, FNS-19</span></li>
+      </ul>
+      <div class="check"><b>Checkpoint:</b> a user adds a friend and creates a group with members.</div>
+    </div>
+
+    <div class="stage">
+      <div class="head"><span class="num">Stage 3</span><h3>Expenses &amp; Splitting</h3><span class="b b-core">MVP core</span></div>
+      <ul>
+        <li>Expense backend: CRUD, equal / exact / percentage split logic, validation, history <span class="tkt">FNS-29</span></li>
+        <li>Expense UI: add/edit/delete, split selector, detail view, list/filters <span class="tkt">FNS-21</span></li>
+        <li>Reuse the split algorithm reference (PDF); verify with unit tests. <span class="b b-core">single currency</span></li>
+      </ul>
+      <div class="check"><b>Checkpoint:</b> a member adds an expense to a group and the split is computed and stored correctly.</div>
+    </div>
+
+    <div class="stage">
+      <div class="head"><span class="num">Stage 4</span><h3>Balances &amp; Settlement</h3><span class="b b-core">MVP core — closes the loop</span></div>
+      <ul>
+        <li>Ledger + balance engine: who-owes-whom, group &amp; per-user balances <span class="tkt">FNS-30</span></li>
+        <li>Settlement + debt-simplification algorithm; settle-up flow <span class="tkt">FNS-31</span></li>
+        <li>Balance &amp; settlement UI: balances, simplify viz, settle-up, history <span class="tkt">FNS-22</span></li>
+      </ul>
+      <div class="check"><b>Checkpoint:</b> the entire money loop works end-to-end on the real architecture.</div>
+    </div>
+
+    <div class="milestone"><h3>🏁 Milestone — MVP Core / Alpha</h3></div>
+
+    <div class="stage">
+      <div class="head"><span class="num">Stage 5</span><h3>MVP Feature Completion</h3><span class="b b-feat">MVP</span></div>
+      <ul>
+        <li><strong>Multi-currency:</strong> per-expense currency + conversion in the ledger <span class="tkt">extends FNS-29, FNS-30</span></li>
+        <li><strong>Attachments &amp; comments:</strong> file storage selection, receipt upload, comments <span class="tkt">extends FNS-29, FNS-21</span></li>
+        <li><strong>Group todos:</strong> todo lists + task assignment backend + UI <span class="tkt">FNS-32, FNS-23</span></li>
+      </ul>
+      <div class="check"><b>Priority within stage:</b> multi-currency → attachments/comments → todos. Todos and attachments can slip past launch without breaking the core promise.</div>
+    </div>
+
+    <div class="stage">
+      <div class="head"><span class="num">Stage 6</span><h3>Production Readiness</h3><span class="b b-launch">MVP launch</span></div>
+      <div class="callout" style="margin:0 0 12px;"><strong>Deployment target: AWS</strong> (the learning track), provisioned with <strong>OpenTofu</strong> — see <a href="./aws-architecture.html">AWS architecture</a>. The MVP runs the minimal slice (ECS Fargate + public ALB + Cloud Map + one RDS Postgres); async/distributed pieces land in P1. Fly.io remains a simpler fallback.</div>
+      <ul>
+        <li>Containerize all services; multi-stage Docker builds <span class="tkt">FNS-601</span></li>
+        <li>Production infra on AWS via OpenTofu: ECS Fargate, ALB + ACM + Route 53, RDS Postgres (2 DBs), VPC + endpoints, ECR <span class="tkt">FNS-602 (re-scoped)</span></li>
+        <li>Env/secrets management (SSM Parameter Store / Secrets Manager) <span class="tkt">FNS-603</span></li>
+        <li>Deployment automation + rollback: GitHub Actions + OIDC, <code>tofu plan/apply</code>, ECS circuit-breaker <span class="tkt">FNS-604</span></li>
+        <li>Baseline security: rate limiting, validation, CORS, TLS everywhere <span class="tkt">FNS-703, FNS-702 (partial)</span></li>
+        <li>Minimal observability: structured logging + health checks/uptime <span class="tkt">FNS-501, FNS-502 (partial)</span></li>
+        <li>Core tests: unit (split/ledger) + E2E for critical journeys in CI <span class="tkt">FNS-57, FNS-59</span></li>
+      </ul>
+      <div class="check"><b>Checkpoint:</b> publicly deployed, monitored at a basic level, core flows tested.</div>
+    </div>
+
+    <div class="milestone"><h3>🏁 Milestone — MVP Launch</h3></div>
+  </section>
+
+  <!-- 4. POST-MVP -->
+  <section>
+    <h2>4 · Post-MVP Stages</h2>
+    <h4>P1 — Hardening &amp; Enterprise Architecture <span class="b b-post">post-mvp</span></h4>
+    <p class="tkt">Full distributed-system track in <a href="./aws-architecture.html">AWS architecture</a> §5 and §8.</p>
+    <ul>
+      <li><strong>Async / event-driven</strong> (the real distributed leap): EventBridge + SQS + a Worker for balance recalculation &amp; debt simplification, with DLQ + idempotency <span class="tkt">extends FNS-30/31</span></li>
+      <li><strong>S3 pre-signed receipt uploads</strong> + <strong>SNS</strong> notification fan-out <span class="tkt">extends FNS-29</span></li>
+      <li>Full fine-grained authorization / ReBAC (OpenFGA or Permit.io) <span class="tkt">FNS-12</span></li>
+      <li>Distributed tracing (ADOT → X-Ray) + full metrics dashboards + alerting <span class="tkt">FNS-37, FNS-36, FNS-38</span></li>
+      <li>Full test pyramid: integration, broader E2E, UAT <span class="tkt">FNS-58, FNS-60, FNS-61</span></li>
+      <li>Security audit, SAST/DAST, compliance docs <span class="tkt">FNS-46, FNS-49, FNS-50</span></li>
+      <li>Performance/load testing baseline <span class="tkt">FNS-39, FNS-904</span></li>
+    </ul>
+    <h4>P2 — Advanced Product Features <span class="b b-post">post-mvp</span></h4>
+    <ul>
+      <li>Advanced reporting + analytics + CSV/PDF export <span class="tkt">FNS-52</span></li>
+      <li>Transaction categories <span class="tkt">FNS-53</span></li>
+      <li>Push notifications (Firebase/OneSignal) <span class="tkt">FNS-54</span></li>
+    </ul>
+    <h4>P3 — Reach <span class="b b-post">post-mvp</span></h4>
+    <ul>
+      <li>Native mobile apps (Flutter/React Native), offline support <span class="tkt">FNS-804</span></li>
+      <li>MCP server for AI agents</li>
+    </ul>
+  </section>
+
+  <!-- 5. CRITICAL PATH -->
+  <section>
+    <h2>5 · Critical Path &amp; Sequencing</h2>
+<pre>Stage 0 ──► Stage 1 ──► Stage 2 ──► Stage 3 ──► Stage 4 ──► [Alpha]
+                                                   │
+                                                   ├─► Stage 5 (features)
+                                                   └─► Stage 6 (launch) ──► [MVP Launch]
+                                                                               │
+                                                                  P1 ─► P2 ─► P3</pre>
+    <ul>
+      <li><strong>Stage 0 is the current bottleneck</strong> — Core service and DB schemas don't exist; almost everything depends on them.</li>
+      <li><strong>Authorization is deliberately deferred.</strong> Simple membership checks in MVP, full ReBAC in P1 — the biggest scope-saver without hurting the product.</li>
+      <li><strong>Observability is split:</strong> "can I see logs and is it up?" is MVP; tracing/alerting/SLAs are P1.</li>
+      <li>Stages 5 and 6 can run partly in parallel once Alpha is reached.</li>
+    </ul>
+  </section>
+
+  <!-- 6. RISKS -->
+  <section>
+    <h2>6 · Risks &amp; Mitigations</h2>
+    <table>
+      <tr><th>Risk</th><th>Mitigation</th></tr>
+      <tr><td>Architecture complexity stalls the product</td><td>Thin vertical slice first (Stages 1–4); defer FGA, tracing, multi-repo polish</td></tr>
+      <tr><td>Multi-currency complicates the ledger early</td><td>Build the ledger single-currency in Stage 4; add currency in Stage 5</td></tr>
+      <tr><td>Solo/learning project, unbounded scope</td><td>Hard line at "MVP Launch"; everything else is explicitly P1–P3</td></tr>
+      <tr><td>Free-tier limits on hosting/o11y</td><td>Keep MVP footprint small (2 services + 2 DBs); pick OSS-friendly free tiers</td></tr>
+    </table>
+  </section>
+
+  <!-- 7. JIRA MAPPING -->
+  <section>
+    <h2>7 · Jira ↔ MVP Mapping <span class="b b-feat">proposed</span></h2>
+    <div class="callout"><strong>Nothing in Jira has been changed.</strong> This is a proposal to apply
+      manually or to approve before applying. Full detail in
+      <a href="https://github.com/fair-n-square-co/docs/blob/main/docs/jira-mvp-mapping.md">jira-mvp-mapping.md</a>.</div>
+    <p><strong>Fix Version:</strong> <code>0.1.0-mvp</code> for Stages 0–6. <strong>Labels:</strong></p>
+    <table>
+      <tr><th>Label</th><th>Meaning</th><th>Stages</th></tr>
+      <tr><td><code>mvp-foundation</code></td><td>Plumbing that unblocks the MVP</td><td>0–1</td></tr>
+      <tr><td><code>mvp-core</code></td><td>The core money loop</td><td>2–4</td></tr>
+      <tr><td><code>mvp-features</code></td><td>Extra features requested in MVP</td><td>5</td></tr>
+      <tr><td><code>mvp-launch</code></td><td>Production readiness for launch</td><td>6</td></tr>
+      <tr><td><code>post-mvp</code></td><td>Deferred</td><td>P1–P3</td></tr>
+    </table>
+    <h3>Suggested ticket gaps to add</h3>
+    <ul>
+      <li>Split <strong>multi-currency</strong> out of FNS-29/30 into its own story so core ships single-currency first.</li>
+      <li><strong>File storage provider selection</strong> — currently buried in FNS-3/102; make it a small <code>mvp-features</code> task blocking attachments.</li>
+      <li><strong>gRPC/proto plumbing &amp; connectRPC wiring</strong> for Core — implied by FNS-25, worth an explicit sub-task.</li>
+      <li><strong><code>docker-compose</code> local stack</strong> — split from FNS-601 as a <code>mvp-foundation</code> task (needed in Stage 0, long before production containers).</li>
+    </ul>
+  </section>
+
+  <footer>
+    Source: <code>fair-n-square-co/docs</code> · <a href="./index.html">← Back to docs index</a> ·
+    Companion markdown: <code>delivery-plan.md</code>, <code>jira-mvp-mapping.md</code>
+  </footer>
+
+</div>
+</body>
+</html>
