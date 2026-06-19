@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fair N Square — Workspace Status</title>
+<style>
+  :root {
+    --bg: #0e1116; --panel: #161b22; --panel2: #1c2230; --line: #2a313c;
+    --text: #e6edf3; --muted: #9aa7b4; --accent: #4f8cff; --accent2: #6ee7b7;
+    --warn: #f0b429; --danger: #ff6b6b; --ok: #3fb950; --legacy: #8b949e;
+    --mono: "SFMono-Regular", ui-monospace, Consolas, monospace;
+    --sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.55; }
+  a { color: var(--accent); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 56px 24px 96px; }
+
+  header.hero { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 8px; }
+  .kicker { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+  h1 { margin: 6px 0 10px; font-size: clamp(32px, 5vw, 54px); line-height: 1.02; letter-spacing: -.02em; }
+  .lede { color: var(--muted); font-size: 18px; max-width: 760px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .chip { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; color: var(--muted); }
+
+  section { margin-top: 44px; }
+  h2 { font-size: 24px; letter-spacing: -.01em; margin: 0 0 14px; }
+  h2 .num { color: var(--accent); font-variant-numeric: tabular-nums; margin-right: 10px; }
+  p.copy { color: var(--muted); max-width: 800px; }
+  code.inline { font-family: var(--mono); background: var(--panel2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; font-size: 13px; color: var(--accent2); }
+
+  .callout { border: 1px solid var(--line); border-left-width: 4px; border-radius: 10px; padding: 16px 18px; background: var(--panel); margin: 16px 0; }
+  .callout.decision { border-left-color: var(--accent); }
+  .callout.warn { border-left-color: var(--warn); }
+  .callout.info { border-left-color: var(--accent2); }
+  .callout .tag { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .callout p { margin: 6px 0 0; }
+
+  .mermaid-card { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); padding: 18px; overflow-x: auto; }
+  .caption { color: var(--muted); font-size: 13px; margin-top: 10px; }
+
+  .repo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+  .repo { border: 1px solid var(--line); border-radius: 11px; background: var(--panel); padding: 14px 16px; }
+  .repo h3 { margin: 0 0 4px; font-size: 15px; font-family: var(--mono); display: flex; align-items: center; gap: 8px; }
+  .repo p { margin: 0; color: var(--muted); font-size: 13px; }
+  .badge { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; padding: 2px 7px; border-radius: 5px; text-transform: uppercase; }
+  .b-active { background: rgba(63,185,80,.16); color: var(--ok); }
+  .b-legacy { background: rgba(139,148,158,.16); color: var(--legacy); }
+  .b-secret { background: rgba(255,107,107,.16); color: var(--danger); }
+  .b-empty { background: rgba(240,180,41,.14); color: var(--warn); }
+  .b-amb { background: rgba(79,140,255,.16); color: var(--accent); }
+
+  pre.code { border: 1px solid var(--line); border-radius: 11px; background: #0b0e13; padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px; line-height: 1.5; color: #c9d1d9; }
+  pre.code .fn { display:block; color: var(--muted); font-size: 11.5px; margin-bottom: 10px; }
+  pre.code .c { color: #7d8590; }
+  pre.code .k { color: #ff7b72; }
+  pre.code .t { color: #79c0ff; }
+
+  .ep { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); padding: 12px 14px; margin-bottom: 10px; }
+  .ep .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .method { font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 5px; background: rgba(79,140,255,.16); color: var(--accent); }
+  .path { font-family: var(--mono); font-size: 12.5px; color: var(--text); word-break: break-all; }
+  .ep p { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .cols { grid-template-columns: 1fr; } }
+  ul.check { list-style: none; padding: 0; margin: 0; }
+  ul.check li { border: 1px solid var(--line); border-radius: 9px; background: var(--panel); padding: 10px 12px; margin-bottom: 8px; }
+  ul.check li .lbl { font-weight: 600; font-size: 14px; display: flex; gap: 8px; }
+  ul.check li .note { color: var(--muted); font-size: 12.5px; margin-top: 3px; }
+  .mark { flex: none; }
+  .done .mark { color: var(--ok); }
+  .todo .mark { color: var(--muted); }
+
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="kicker">Workspace Recap</div>
+    <h1>Fair N&nbsp;Square</h1>
+    <p class="lede">Multi-repo status of the open-source expense-splitter — a Gen-1 → Gen-2 pivot, what's built (auth + contracts), and the core product still to build.</p>
+    <div class="meta-row">
+      <span class="chip">~13 repos · fair-n-square-co</span>
+      <span class="chip">SvelteKit · Go · protobuf · PostgreSQL</span>
+      <span class="chip">Roadmap: 351 pts / 10 epics</span>
+      <span class="chip">Target: Q4 2025</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="callout decision">
+      <span class="tag">Headline decision</span>
+      <p><strong>There was a generational pivot, and the tracking artifacts point at the old generation.</strong> A 2024 stack (Flutter <code class="inline">app</code> + Go <code class="inline">transactions</code> on GORM + Firebase auth) was largely replaced in 2025 by a new stack (SvelteKit <code class="inline">webapp</code> + Better Auth, Go <code class="inline">ledger</code> on sqlc, shared <code class="inline">apis</code> protobuf). The GitHub Project board (#3) still only tracks the 2024 issues — treat <code class="inline">docs/ROADMAP.md</code>, not the board, as the source of truth.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">01</span>Architecture — Gen 2 (current) vs Gen 1 (legacy)</h2>
+    <div class="mermaid-card">
+      <pre class="mermaid">
+graph TB
+  subgraph G2["Gen 2 — current direction (2025+)"]
+    WA["webapp<br/>SvelteKit 5 + Better Auth<br/>AUTH DONE · domain EMPTY"]
+    APIS["apis<br/>protobuf contracts<br/>4 services / 8 RPCs"]
+    LED["ledger (Go)<br/>friend schema done<br/>handlers STUB"]
+    ACC["transactions → accounts (Go)<br/>PR #58"]
+    PG[("PostgreSQL")]
+    WA -->|connectRPC + JWT| LED
+    WA -->|connectRPC| ACC
+    APIS -.codegen.-> WA
+    APIS -.codegen.-> LED
+    APIS -.codegen.-> ACC
+    LED --> PG
+    ACC --> PG
+  end
+  subgraph G1["Gen 1 — legacy (2024)"]
+    APP["app — Flutter / BLoC"]
+    TX["transactions — Go GORM / Atlas"]
+    JWT["jwt-gen — Firebase tokens"]
+    APP --> TX
+    APP --> JWT
+  end
+      </pre>
+    </div>
+    <p class="caption">Gen 2 is the live target; Gen 1 repos are legacy. Note <code class="inline">transactions</code> is being repurposed into <code class="inline">accounts</code> (PR #58), not deleted.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>The repos at a glance</h2>
+    <div class="repo-grid">
+      <div class="repo"><h3>webapp <span class="badge b-active">active</span></h3><p>SvelteKit 5 frontend. Auth fully built; app domain (groups/expenses) empty. Most advanced repo (last commit Dec 2025).</p></div>
+      <div class="repo"><h3>apis <span class="badge b-active">active</span></h3><p>buf/protobuf contracts. 4 services, 8 RPCs. Generates Go + TS, publishes <code class="inline">@fairnsquare/apis</code>.</p></div>
+      <div class="repo"><h3>ledger <span class="badge b-active">active</span></h3><p>Go "source of truth" service. Friend/persona schema done; gRPC handlers are stubs. Open PR #4.</p></div>
+      <div class="repo"><h3>docs <span class="badge b-active">active</span></h3><p>ADRs, MVP scope, DB designs, split-algorithm PDF, roadmap. The project brain.</p></div>
+      <div class="repo"><h3>transactions <span class="badge b-legacy">legacy</span></h3><p>Gen-1 Go backend (GORM). Open PR #58 renames it to <code class="inline">accounts</code>.</p></div>
+      <div class="repo"><h3>app <span class="badge b-amb">ambiguous</span></h3><p>Local folder is a fresh empty TanStack Start (React 19) scaffold (Feb 2026); org repo <code class="inline">app</code> is the 2024 Flutter app.</p></div>
+      <div class="repo"><h3>go-template <span class="badge b-legacy">utility</span></h3><p>Go service scaffold (sqlc/goose/air/chi) to stamp out new services.</p></div>
+      <div class="repo"><h3>jwt-gen <span class="badge b-legacy">legacy</span></h3><p>Firebase custom-token generator (Gen-1 auth tooling).</p></div>
+      <div class="repo"><h3>auth-api · codecov · pkl · fairnsquareapis <span class="badge b-empty">empty</span></h3><p>Empty / abandoned stubs — <code class="inline">.git</code> only or leftover scaffolding.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span>Data models that exist today</h2>
+    <p class="copy">Only two schemas are actually implemented. Everything else (groups, expenses, balances, settlements) is still only a contract or a roadmap line. The webapp's application schema is literally <code class="inline">export const schema = {}</code> — only the Better Auth tables exist there.</p>
+    <pre class="code"><span class="fn">webapp · src/lib/server/db/betterauth/schema.ts</span><span class="c">-- user.id is referenced by session/account/passkey (all ON DELETE CASCADE)</span>
+<span class="k">CREATE TABLE</span> <span class="t">"user"</span> (
+  id             text <span class="k">PRIMARY KEY</span>,
+  email          text <span class="k">NOT NULL UNIQUE</span>,
+  name           text <span class="k">NOT NULL</span>,
+  email_verified boolean,
+  image          text
+);
+<span class="k">CREATE TABLE</span> <span class="t">session</span> (
+  id, user_id <span class="k">REFERENCES</span> "user"(id) <span class="k">ON DELETE CASCADE</span>, token <span class="k">UNIQUE</span>, expires_at
+);
+<span class="k">CREATE TABLE</span> <span class="t">account</span> (
+  id, user_id <span class="k">REFERENCES</span> "user"(id), provider_id,
+  password,      <span class="c">-- set for email/password</span>
+  access_token   <span class="c">-- set for OAuth</span>
+);
+<span class="k">CREATE TABLE</span> <span class="t">passkey</span> ( id, user_id, public_key, credential_id );
+<span class="k">CREATE TABLE</span> <span class="t">jwks</span>    ( id, public_key, private_key );  <span class="c">-- RS256 keys, sign API JWTs</span></pre>
+
+    <pre class="code"><span class="fn">ledger · db/migrations/20251027225213_friends.sql</span><span class="k">CREATE TYPE</span> friend_status <span class="k">AS ENUM</span> (<span class="t">'pending'</span>, <span class="t">'accepted'</span>, <span class="t">'blocked'</span>);
+<span class="k">CREATE TABLE</span> <span class="t">persona</span> (
+  id         uuid <span class="k">PRIMARY KEY</span>,   <span class="c">-- external system reference (auth user)</span>
+  created_at timestamptz
+);
+<span class="k">CREATE TABLE</span> <span class="t">friend</span> (
+  id             uuid <span class="k">PRIMARY KEY</span>,
+  persona_id_1   uuid <span class="k">REFERENCES</span> persona(id),
+  persona_id_2   uuid <span class="k">REFERENCES</span> persona(id),
+  status         friend_status,  <span class="c">-- pending | accepted | blocked</span>
+  name_persona_1 text,
+  name_persona_2 text            <span class="c">-- UNIQUE on normalized (p1, p2) pair</span>
+);</pre>
+  </section>
+
+  <section>
+    <h2><span class="num">04</span>API contracts (apis repo)</h2>
+    <p class="copy">The protobuf contracts are <strong>ahead of the implementations</strong> — defined and code-generated (Go + TS), but most backend handlers are still stubs. Paths are the connectRPC routes.</p>
+    <div class="ep"><div class="top"><span class="method">POST</span><span class="path">/fairnsquare.service.user.v1alpha1.UserService/CreateUser</span></div><p>UserService also exposes GetUser and IsUsernameAvailable.</p></div>
+    <div class="ep"><div class="top"><span class="method">POST</span><span class="path">/fairnsquare.service.user.v1alpha1.GroupService/CreateGroup</span></div><p>GroupService: CreateGroup, ListGroups, UpdateUsersInGroup. No backend implements these yet in Gen 2.</p></div>
+    <div class="ep"><div class="top"><span class="method">POST</span><span class="path">/fairnsquare.service.ledger.v1alpha1.FriendService/ManageFriend</span></div><p>FriendService: ManageFriend, ListFriends. Registered in ledger but handlers return empty responses. Nearest-term implementable RPC, since the schema exists.</p></div>
+    <div class="ep"><div class="top"><span class="method">POST</span><span class="path">/fairnsquare.service.transaction.v1alpha1.TransactionService/CreateTransaction</span></div><p>TransactionService: CreateTransaction, ListTransactions. Carries description, google.type.Money amount, type (PAYMENT|SETTLEMENT), per-user paid/owed shares. Contract only.</p></div>
+  </section>
+
+  <section>
+    <h2><span class="num">05</span>Done vs. remaining</h2>
+    <div class="cols">
+      <div>
+        <h3 style="font-size:14px;color:var(--ok);margin:0 0 10px">✓ Done</h3>
+        <ul class="check">
+          <li class="done"><div class="lbl"><span class="mark">✓</span>Foundation &amp; architecture (Epic 1)</div><div class="note">Repos, ADRs, DB designs, go-template, CI on most repos.</div></li>
+          <li class="done"><div class="lbl"><span class="mark">✓</span>Authentication (Epic 2 — the hard part)</div><div class="note">Email/password, Google OAuth, passkeys, JWT session + 30-day API tokens, JWKS, protected routes, e2e + unit tests.</div></li>
+          <li class="done"><div class="lbl"><span class="mark">✓</span>API contracts</div><div class="note">User/group/friend/transaction protos defined &amp; code-generated; npm package published.</div></li>
+          <li class="done"><div class="lbl"><span class="mark">✓</span>Ledger data model</div><div class="note">friend/persona tables + migration in ledger.</div></li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="font-size:14px;color:var(--muted);margin:0 0 10px">☐ Remaining</h3>
+        <ul class="check">
+          <li class="todo"><div class="lbl"><span class="mark">☐</span>Implement ledger handlers (start with friends)</div><div class="note">Wire ManageFriend/ListFriends to the DB; pick up PR #4. Lowest-friction first build.</div></li>
+          <li class="todo"><div class="lbl"><span class="mark">☐</span>Build the core domain in webapp (Epics 3+4, ~144 pts)</div><div class="note">Schema + routes + UI for Groups, Friends, Expenses, Balances, Settlement + debt simplification, Todos. The actual product.</div></li>
+          <li class="todo"><div class="lbl"><span class="mark">☐</span>Resolve transactions → accounts</div><div class="note">Land PR #58; decide scope vs ledger.</div></li>
+          <li class="todo"><div class="lbl"><span class="mark">☐</span>Authorization / FGA</div><div class="note">OpenFGA vs Permit.io still TBD.</div></li>
+          <li class="todo"><div class="lbl"><span class="mark">☐</span>Observability, deploy, security, testing, docs/launch</div><div class="note">Epics 5–7, 9–10 — largely not started.</div></li>
+          <li class="todo"><div class="lbl"><span class="mark">☐</span>Housekeeping</div><div class="note">Retire stale board; resolve frontend ambiguity; harden secret handling; clear Dependabot backlog.</div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="callout info">
+      <span class="tag">Bottom line</span>
+      <p>Auth and the architectural skeleton are genuinely done and solid. The actual expense-splitting product — groups, expenses, balances, settlement — has essentially not been built yet in the current generation; only the contracts and the ledger's friend schema exist. Highest-leverage next move: implement one vertical slice end-to-end (proto → ledger handler → webapp schema/route/UI), starting with <strong>Friends</strong>.</p>
+    </div>
+  </section>
+
+  <footer>
+    Generated from a survey of the local <code class="inline">~/workspace/fairnsquare</code> repos and the fair-n-square-co GitHub org · status as of June 2026.
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "dark",
+    themeVariables: {
+      fontFamily: "Inter, system-ui, sans-serif",
+      primaryColor: "#1c2230",
+      primaryBorderColor: "#4f8cff",
+      primaryTextColor: "#e6edf3",
+      lineColor: "#9aa7b4",
+      clusterBkg: "#12161d",
+      clusterBorder: "#2a313c"
+    }
+  });
+</script>
+</body>
+</html>
