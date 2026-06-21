@@ -61,7 +61,7 @@
   <section>
     <h2>1 · Goals &amp; guardrails</h2>
     <ul>
-      <li>Honor the existing architecture: SvelteKit BFF + Auth service + Core service + gRPC + 2 Postgres DBs.</li>
+      <li>Honor the existing architecture: React BFF + Auth service + Core service + gRPC + 2 Postgres DBs.</li>
       <li>Add distributed-system pieces <strong>because a feature needs them</strong>, not for résumé bingo.</li>
       <li>Keep a low-traffic learning deployment around <strong>$45–60/mo</strong>; set a Budgets alarm at $50 on day one.</li>
     </ul>
@@ -85,7 +85,7 @@
       <code>core</code>, <code>worker</code>; images in <strong>ECR</strong>.</p>
     <h3>The gRPC / HTTP2 gotcha</h3>
     <ul>
-      <li><strong>Browser → BFF:</strong> standard ALB, HTTPS/HTTP2 listener, target group protocol <strong>HTTP1</strong> (SvelteKit Node server is HTTP/1.1).</li>
+      <li><strong>Browser → BFF:</strong> standard ALB, HTTPS/HTTP2 listener, target group protocol <strong>HTTP1</strong> (the React BFF/Node server is HTTP/1.1).</li>
       <li><strong>Browsers never speak gRPC directly</strong> — all browser traffic goes to the BFF, which does server-side connectRPC to the Go services.</li>
       <li><strong>BFF → Auth/Core &amp; service-to-service:</strong> use <strong>Cloud Map</strong> (DNS service discovery, no per-LB hourly charge) over internal ALBs. Add an internal ALB with a <code>GRPC</code> target group later only for that specific lesson. Avoid NLB.</li>
     </ul>
@@ -122,7 +122,7 @@
       <tr><td><strong>SNS</strong></td><td>Notification fan-out (added to group, expense recorded, settle-up reminder) → email/push; SQS for durable in-app.</td><td>Canonical fan-out; pairs with the events above.</td></tr>
       <tr><td><strong>S3</strong></td><td>Receipt/attachment storage; BFF issues pre-signed PUT URLs so browsers upload directly.</td><td>Textbook object storage; basically free; later S3 events → thumbnail/OCR Lambda.</td></tr>
       <tr><td><strong>Cloud Map</strong></td><td>Internal gRPC service discovery.</td><td>Your service-discovery lesson.</td></tr>
-      <tr><td><strong>ADOT + X-Ray + CloudWatch</strong></td><td>ADOT Collector sidecar per task; OTel in Go + SvelteKit; traces → X-Ray, metrics/logs → CloudWatch.</td><td>A request browser→BFF→Core→SQS→worker→DB is exactly where distributed tracing earns its keep.</td></tr>
+      <tr><td><strong>ADOT + X-Ray + CloudWatch</strong></td><td>ADOT Collector sidecar per task; OTel in Go + React BFF; traces → X-Ray, metrics/logs → CloudWatch.</td><td>A request browser→BFF→Core→SQS→worker→DB is exactly where distributed tracing earns its keep.</td></tr>
       <tr><td>ElastiCache (Redis/Valkey)</td><td><em>Defer.</em> Cache balances; idempotency keys for SQS consumers; rate-limit state.</td><td>Real uses, but ~$12/mo and not needed yet.</td></tr>
     </table>
     <p class="callout"><strong>Skip for now:</strong> Step Functions, App Mesh, multi-region, DynamoDB (data is relational), API Gateway (ALB + BFF covers the edge).</p>
@@ -140,8 +140,8 @@
                              │  HTTP/1.1  (TG protocol HTTP1)
                              ▼
                    ┌──────────────────┐
-                   │ SvelteKit BFF/SSR│  (Fargate, private subnet)
-                   │  + ADOT sidecar  │   owns sessions (Better Auth)
+                   │ React app BFF/SSR│  (Fargate, private subnet)
+                   │  + ADOT sidecar  │   sessions via WorkOS AuthKit
                    └───┬──────────┬───┘
         connectRPC/    │          │   connectRPC/gRPC (HTTP2)
         gRPC (HTTP2)   │          │   via Cloud Map DNS

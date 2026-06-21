@@ -1,7 +1,7 @@
 # Fair N Square - Product Roadmap
 
 ## Overview
-This roadmap outlines the epics and tasks for building Fair N Square, an open-source expense splitting application with enterprise-grade architecture. The project follows a microservices architecture with SvelteKit frontend, Go backend services, and gRPC APIs.
+This roadmap outlines the epics and tasks for building Fair N Square, an open-source expense splitting application with enterprise-grade architecture. The project follows a microservices architecture with React frontend, Go backend services, and gRPC APIs.
 
 **Target Launch:** Q4 2025
 **Development Approach:** Kanban/Waterfall hybrid
@@ -22,7 +22,7 @@ This roadmap outlines the epics and tasks for building Fair N Square, an open-so
 - Document development setup process
 
 **FNS-102: Third-Party Service Selection** (5 points)
-- Implement authentication using Better Auth (per ADR-3)
+- Implement authentication using WorkOS AuthKit (per ADR-4; supersedes ADR-3)
 - Research and select authorization service (OpenFGA/Permit.io)
 - Select database solution (PostgreSQL/Cloud Spanner/Turso)
 - Select hosting provider (Fly.io or alternatives)
@@ -605,10 +605,10 @@ This roadmap outlines the epics and tasks for building Fair N Square, an open-so
 - Performance/load testing (basic testing only)
 
 ### Technology Stack Reminder:
-- **Frontend**: SvelteKit (TypeScript)
+- **Frontend**: React (TypeScript)
 - **Backend**: Go with gRPC + connectRPC
 - **Database**: PostgreSQL
-- **Auth**: Better Auth
+- **Auth**: WorkOS AuthKit
 - **Authorization**: OpenFGA/Permit.io
 - **Hosting**: Fly.io (or alternatives)
 - **CI/CD**: GitHub Actions

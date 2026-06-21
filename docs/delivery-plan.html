@@ -94,7 +94,7 @@
     <ul>
       <li><strong>Product goal</strong> — ship a genuinely useful expense splitter: groups, friends,
         expenses, splits, balances, settle-up, debt simplification.</li>
-      <li><strong>Learning goal</strong> — build complex systems with real boundaries: a SvelteKit BFF,
+      <li><strong>Learning goal</strong> — build complex systems with real boundaries: a React BFF,
         a separate Auth service and Core service, gRPC/connectRPC, Postgres, CI/CD, observability —
         deployed for real on free tiers.</li>
     </ul>
@@ -104,13 +104,13 @@
 
     <h3>Target architecture</h3>
 <pre>            ┌────────────────────────────────────────────────────────────┐
-  Browser ──┤  SvelteKit (UI + BFF/SSR)  — owns sessions, renders data     │
+  Browser ──┤  React (UI) + BFF/SSR — sessions via WorkOS AuthKit        │
             └───────────────┬───────────────────────────┬────────────────┘
                             │ gRPC/connectRPC            │ gRPC/connectRPC
                    ┌────────▼─────────┐         ┌────────▼─────────┐
                    │  Auth Service    │◄────────│  Core Service    │
                    │  (Go)            │  M2M    │  (Go, modular     │
-                   │  Better Auth,    │  token  │  monolith)        │
+                   │  user record,    │  token  │  monolith)        │
                    │  profiles, JWKs, │         │  groups, friends, │
                    │  FGA (future)    │         │  expenses, ledger,│
                    └────────┬─────────┘         │  settlement, todos│
@@ -120,17 +120,17 @@
                        └─────────┘                  └─────────┘</pre>
     <p class="tkt">Source ADRs:
       <a href="https://github.com/fair-n-square-co/docs/blob/main/design/records/2-system-design-v1.md">system-design-v1</a> ·
-      <a href="https://github.com/fair-n-square-co/docs/blob/main/design/records/1-use-sveltekit-for-frontend.md">sveltekit</a> ·
-      <a href="https://github.com/fair-n-square-co/docs/blob/main/design/records/3-use-betterauth-for-auth.md">better-auth</a></p>
+      <a href="https://github.com/fair-n-square-co/docs/blob/main/design/records/5-use-react-for-frontend.md">react</a> ·
+      <a href="https://github.com/fair-n-square-co/docs/blob/main/design/records/4-use-workos-for-auth.md">workos</a></p>
 
     <h3>Where we are today</h3>
     <p>Already <span class="b b-done">Done</span> (per Jira FNS):</p>
     <ul>
       <li>Local dev environment &amp; tooling <span class="tkt">FNS-2</span></li>
-      <li>Third-party service selection — Better Auth, Postgres, Fly.io <span class="tkt">FNS-3</span></li>
+      <li>Third-party service selection — revised to WorkOS, Postgres, AWS (orig. Better Auth/Fly.io) <span class="tkt">FNS-3</span></li>
       <li>Repository &amp; proto structure <span class="tkt">FNS-4</span></li>
       <li>Auth service project scaffold <span class="tkt">FNS-8</span></li>
-      <li>SvelteKit project setup <span class="tkt">FNS-15</span></li>
+      <li>SvelteKit project setup <span class="tkt">FNS-15 (to be re-scaffolded on React, ADR-5)</span></li>
       <li>Authentication UI (login/signup screens) <span class="tkt">FNS-16</span></li>
     </ul>
     <div class="callout"><strong>In short:</strong> scaffolding exists; no end-to-end feature works yet.
@@ -149,7 +149,7 @@
     <h3>In scope for MVP</h3>
     <table>
       <tr><th>Area</th><th>Included</th></tr>
-      <tr><td>Identity</td><td>Email/password + OAuth sign-up &amp; login (Better Auth), sessions in the BFF, basic profile</td></tr>
+      <tr><td>Identity</td><td>Google login via WorkOS AuthKit, sessions in the BFF, basic profile</td></tr>
       <tr><td>Authorization</td><td><strong>Simple ownership/membership checks</strong> (am I a member of this group?). <em>Not</em> full ReBAC.</td></tr>
       <tr><td>Social graph</td><td>Friend requests (pending/accepted/rejected), groups, add/remove members</td></tr>
       <tr><td>Expenses</td><td>Add/edit/delete expense; split <strong>equal / exact / percentage</strong>; notes</td></tr>
@@ -157,7 +157,7 @@
       <tr><td>Multi-currency</td><td>Expenses in different currencies with conversion <span class="b b-feat">stage 5</span></td></tr>
       <tr><td>Attachments &amp; comments</td><td>Receipt photo/PDF upload + comments on expenses <span class="b b-feat">stage 5</span></td></tr>
       <tr><td>Group todos</td><td>Group todo lists with task assignment <span class="b b-feat">stage 5</span></td></tr>
-      <tr><td>Platform</td><td>Containerized, deployed to Fly.io, basic logging + health checks, core E2E tests</td></tr>
+      <tr><td>Platform</td><td>Containerized, deployed to AWS (ECS Fargate), basic logging + health checks, core E2E tests</td></tr>
     </table>
     <div class="callout">The last four feature rows were explicitly requested as part of the MVP. They
       are real work, so they're sequenced into a dedicated <strong>MVP-Features</strong> stage
@@ -201,7 +201,7 @@
     <div class="stage">
       <div class="head"><span class="num">Stage 1</span><h3>Auth &amp; Identity</h3><span class="b b-core">MVP</span></div>
       <ul>
-        <li>Better Auth in the SvelteKit BFF: sign-up, login, OAuth, sessions <span class="tkt">FNS-9, FNS-11</span></li>
+        <li>WorkOS AuthKit in the React BFF: Google login, sessions <span class="tkt">FNS-9, FNS-11</span></li>
         <li>User profile CRUD in Auth service + profile UI <span class="tkt">FNS-10, FNS-17</span></li>
         <li>M2M token service; JWK hosting/validation <span class="tkt">FNS-13</span></li>
         <li>Core ↔ Auth integration layer: token validation, user context <span class="tkt">FNS-26</span></li>

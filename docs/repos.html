@@ -63,7 +63,7 @@
     <h2>1 · Inventory (13 repos)</h2>
     <table>
       <tr><th>Repo</th><th>Purpose (inferred)</th><th>Lang</th><th>Last push</th><th>Verdict</th></tr>
-      <tr><td><code>webapp</code></td><td>SvelteKit UI + BFF + Better Auth login (drizzle, storybook, playwright, husky)</td><td>TS</td><td>2025-12-15</td><td><span class="v v-keep">Keep</span> canonical frontend</td></tr>
+      <tr><td><code>webapp</code></td><td>SvelteKit UI + BFF + Better Auth login (drizzle, storybook, playwright, husky)</td><td>TS</td><td>2025-12-15</td><td><span class="v v-keep">Keep</span> canonical frontend; re-scaffold on React + WorkOS (ADR-5/4)</td></tr>
       <tr><td><code>apis</code></td><td>Proto/contracts: buf + connectRPC, generated Go+TS</td><td>TS</td><td>2025-12-13</td><td><span class="v v-keep">Keep</span> + rename → <code>proto</code></td></tr>
       <tr><td><code>docs</code></td><td>ADRs, roadmap, product spec, diagrams (this repo)</td><td>—</td><td>2026-06-19</td><td><span class="v v-keep">Keep</span></td></tr>
       <tr><td><code>ledger</code></td><td>Ledger/transactions service — sqlc + goose</td><td>Go</td><td>2026-03-18</td><td><span class="v v-arch">Fold</span> into <code>core</code></td></tr>
@@ -83,7 +83,7 @@
     <h2>2 · Mapping to the target architecture (+ gaps)</h2>
     <table>
       <tr><th>Component (from ADRs)</th><th>Repo home</th><th>Status</th></tr>
-      <tr><td>SvelteKit UI + BFF (+ Better Auth login)</td><td><code>webapp</code></td><td>✅</td></tr>
+      <tr><td>React UI + BFF (+ WorkOS AuthKit login)</td><td><code>webapp</code></td><td>⚠️ exists as SvelteKit; re-scaffold on React (ADR-5)</td></tr>
       <tr><td>Auth Service (Go) — profiles, JWKs, M2M, ReBAC</td><td><code>auth-api</code></td><td>⚠️ exists but an empty template; needs real implementation</td></tr>
       <tr><td><strong>Core Service</strong> (Go modular monolith) — groups, friends, expenses, settlement, ledger</td><td><strong>— gap —</strong></td><td>❌ No <code>core</code> repo. <code>ledger</code> covers only the ledger slice.</td></tr>
       <tr><td>Proto / contracts</td><td><code>apis</code> → <code>proto</code></td><td>✅</td></tr>
@@ -115,7 +115,7 @@
     <h2>4 · Recommended final layout</h2>
     <table>
       <tr><th>Repo</th><th>One-line purpose</th></tr>
-      <tr><td><code>webapp</code></td><td>SvelteKit UI + BFF; hosts Better Auth login &amp; sessions</td></tr>
+      <tr><td><code>webapp</code></td><td>React UI + BFF; hosts WorkOS AuthKit login &amp; sessions</td></tr>
       <tr><td><code>auth-api</code> <span class="v v-arch">rename?</span></td><td>Go Auth Service: profiles, JWKs, M2M tokens, ReBAC</td></tr>
       <tr><td><code>core</code> <span class="v v-new">new</span></td><td>Go modular-monolith Core Service: groups, friends, expenses, settlement, ledger</td></tr>
       <tr><td><code>proto</code> <span class="v v-new">renamed</span></td><td>Buf/connectRPC contracts + generated Go/TS clients</td></tr>

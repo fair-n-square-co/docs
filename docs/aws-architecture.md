@@ -15,7 +15,7 @@
 The north star: **learn real AWS primitives (VPC, ALB, ECS, RDS, IAM, async messaging, observability)
 without drowning in ops or blowing past free-tier.** Every choice below is filtered through that.
 
-- Honor the existing architecture (SvelteKit BFF + Auth service + Core service + gRPC + 2 Postgres DBs).
+- Honor the existing architecture (React BFF + Auth service + Core service + gRPC + 2 Postgres DBs).
 - Add distributed-system pieces **because a feature needs them**, not for résumé bingo.
 - Keep a low-traffic learning deployment around **$45–60/mo**; set a Budgets alarm at $50 on day one.
 
@@ -37,7 +37,7 @@ FaaS model. The realistic field:
 **Decision:** one ECS cluster, Fargate, services `bff`, `auth`, `core`, `worker`. Images in **ECR**.
 
 ### The gRPC / HTTP2 gotcha
-- **Browser → BFF:** standard ALB, HTTPS/HTTP2 listener, **target group protocol HTTP1** (SvelteKit Node server is HTTP/1.1).
+- **Browser → BFF:** standard ALB, HTTPS/HTTP2 listener, **target group protocol HTTP1** (the React BFF/Node server is HTTP/1.1).
 - **Browsers never speak gRPC directly** — all browser traffic goes to the BFF, which does server-side connectRPC to the Go services (matches the ADR's BFF pattern).
 - **BFF → Auth/Core and service-to-service (real gRPC/HTTP2):** use **Cloud Map** (service discovery, DNS-based, no per-LB hourly charge) instead of internal ALBs. connect-go round-robins over the A records. Add one internal ALB with a `GRPC` target group later *only* if you specifically want that lesson. Avoid NLB.
 
@@ -84,7 +84,7 @@ FaaS model. The realistic field:
 | **SNS** | Notification fan-out ("added to group", "expense recorded", "settle-up reminder") → email/push, SQS for durable in-app. | Canonical fan-out; pairs with the events above. |
 | **S3** | Receipt/attachment storage; BFF issues **pre-signed PUT URLs** so browsers upload directly. | Textbook object storage; basically free; later S3 events → thumbnail/OCR Lambda. |
 | **Cloud Map** | Internal gRPC service discovery (already in topology). | Your service-discovery lesson. |
-| **ADOT + X-Ray + CloudWatch** | ADOT Collector **sidecar** per task; OTel in Go + SvelteKit; traces → X-Ray, metrics/logs → CloudWatch; Container Insights. | A request browser→BFF→Core→SQS→worker→DB is exactly where distributed tracing earns its keep. |
+| **ADOT + X-Ray + CloudWatch** | ADOT Collector **sidecar** per task; OTel in Go + React BFF; traces → X-Ray, metrics/logs → CloudWatch; Container Insights. | A request browser→BFF→Core→SQS→worker→DB is exactly where distributed tracing earns its keep. |
 | **ElastiCache (Redis/Valkey)** | *Defer.* Cache computed balances; idempotency keys for SQS consumers; rate-limit state. | Real uses, but ~$12/mo and not needed yet. Adopt for the caching/idempotency lesson. |
 
 **Skip for now:** Step Functions, App Mesh, multi-region, DynamoDB (data is relational), API Gateway
@@ -105,8 +105,8 @@ FaaS model. The realistic field:
                              │  HTTP/1.1  (TG protocol HTTP1)
                              ▼
                    ┌──────────────────┐
-                   │ SvelteKit BFF/SSR│  (Fargate, private subnet)
-                   │  + ADOT sidecar  │   owns sessions (Better Auth)
+                   │ React app BFF/SSR│  (Fargate, private subnet)
+                   │  + ADOT sidecar  │   sessions via WorkOS AuthKit
                    └───┬──────────┬───┘
         connectRPC/    │          │   connectRPC/gRPC (HTTP2)
         gRPC (HTTP2)   │          │   via Cloud Map DNS

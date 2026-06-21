@@ -53,7 +53,7 @@ Fair N Square came out of necessity of building a payment splitting system like 
 
 Some of the advanced technical requirements can be out of scope, but we want to design our systems to ensure we achieve these goals in the future.
 
-- Platform(s): Web (SvelteKit)
+- Platform(s): Web (React)
 - Backend: Microservices architecture using gRPC
 - Database: Standard database solution popular in big enterprise (e.g., PostgreSQL, Cloud Spanner etc.)
 - Third-party integrations like WorkOS for authentication, openFGA/permit.io for authorization etc.

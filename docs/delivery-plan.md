@@ -20,7 +20,7 @@ goals**, and it's important to keep them distinct:
 
 1. **Product goal** — ship a genuinely useful expense splitter: groups, friends, expenses, splits,
    balances, settle-up, debt simplification.
-2. **Learning goal** — practice building complex systems with real boundaries: a SvelteKit BFF, a
+2. **Learning goal** — practice building complex systems with real boundaries: a React BFF, a
    separate Auth service and Core service, gRPC/connectRPC, Postgres, CI/CD, and observability —
    deployed for real on free tiers.
 
@@ -31,13 +31,13 @@ the real architecture, but cut a thin vertical slice through it first**, then ha
 
 ```
             ┌────────────────────────────────────────────────────────────┐
-  Browser ──┤  SvelteKit (UI + BFF/SSR)  — owns sessions, renders data     │
+  Browser ──┤  React (UI) + BFF/SSR — sessions via WorkOS AuthKit        │
             └───────────────┬───────────────────────────┬────────────────┘
                             │ gRPC/connectRPC            │ gRPC/connectRPC
                    ┌────────▼─────────┐         ┌────────▼─────────┐
                    │  Auth Service    │◄────────│  Core Service    │
                    │  (Go)            │  M2M    │  (Go, modular     │
-                   │  Better Auth,    │  token  │  monolith)        │
+                   │  user record,    │  token  │  monolith)        │
                    │  profiles, JWKs, │         │  groups, friends, │
                    │  FGA (future)    │         │  expenses, ledger,│
                    └────────┬─────────┘         │  settlement, todos│
@@ -49,18 +49,18 @@ the real architecture, but cut a thin vertical slice through it first**, then ha
 ```
 
 Source ADRs: [`../design/records/2-system-design-v1.md`](../design/records/2-system-design-v1.md),
-[`../design/records/1-use-sveltekit-for-frontend.md`](../design/records/1-use-sveltekit-for-frontend.md),
-[`../design/records/3-use-betterauth-for-auth.md`](../design/records/3-use-betterauth-for-auth.md).
+[`../design/records/5-use-react-for-frontend.md`](../design/records/5-use-react-for-frontend.md),
+[`../design/records/4-use-workos-for-auth.md`](../design/records/4-use-workos-for-auth.md).
 
 ### Where we are today
 
 Already **done** (per Jira FNS):
 
 - ✅ Local dev environment, tooling (Go, Node, Docker) — *FNS-2*
-- ✅ Third-party service selection (Better Auth, Postgres, Fly.io) — *FNS-3*
+- ✅ Third-party service selection — revised to **WorkOS, Postgres, AWS** (orig. Better Auth/Fly.io) — *FNS-3*
 - ✅ Repository & proto repository structure — *FNS-4*
 - ✅ Auth service project scaffold — *FNS-8*
-- ✅ SvelteKit project setup — *FNS-15*
+- ✅ SvelteKit project setup — *FNS-15* *(to be re-scaffolded on React, ADR-5)*
 - ✅ Authentication UI (login/signup screens) — *FNS-16*
 
 In short: **scaffolding exists; no end-to-end feature works yet.** The Auth flow isn't wired to a
@@ -80,7 +80,7 @@ If that loop works end-to-end and is deployed, the MVP is a success. Everything 
 
 | Area | Included |
 | --- | --- |
-| **Identity** | Email/password + OAuth sign-up & login (Better Auth), sessions in the BFF, basic profile |
+| **Identity** | Google login via WorkOS AuthKit, sessions in the BFF, basic profile |
 | **Authorization** | **Simple ownership/membership checks** (am I a member of this group?). *Not* full ReBAC. |
 | **Social graph** | Friend requests (pending/accepted/rejected), groups, add/remove members |
 | **Expenses** | Add/edit/delete expense; split **equal / exact / percentage**; notes |
@@ -88,7 +88,7 @@ If that loop works end-to-end and is deployed, the MVP is a success. Everything 
 | **Multi-currency** | Record expenses in different currencies with conversion *(MVP-Features stage)* |
 | **Attachments & comments** | Receipt photo/PDF upload + comments on expenses *(MVP-Features stage)* |
 | **Group todos** | Group todo lists with task assignment *(MVP-Features stage)* |
-| **Platform** | Containerized, deployed to Fly.io, basic logging + health checks, core E2E tests |
+| **Platform** | Containerized, deployed to AWS (ECS Fargate), basic logging + health checks, core E2E tests |
 
 > The bottom four rows were explicitly requested as part of the MVP. They are real work, so they're
 > sequenced into a dedicated **MVP-Features** stage *after* the core money loop is proven — they
@@ -132,7 +132,7 @@ Finish the plumbing the rest of the work stands on.
 ### Stage 1 — Auth & Identity *(MVP)*
 Make login real and give the Core service a trusted user context.
 
-- Better Auth integration in the SvelteKit BFF: sign-up, login, OAuth, session management — *FNS-9, FNS-11*
+- WorkOS AuthKit integration in the React BFF: Google login, session management — *FNS-9, FNS-11*
 - User profile CRUD in Auth service + profile UI — *FNS-10, FNS-17*
 - M2M token service so Core can call Auth on behalf of users; JWK hosting/validation — *FNS-13*
 - Core ↔ Auth integration layer: token validation middleware, user context — *FNS-26*

@@ -1,8 +1,12 @@
 ---
 title: Use Web/SvelteKit for Frontend
-status: Proposed
+status: Superseded
 date: 2025-10-03
 ---
+
+> **Superseded by [ADR-5: Use React for the Frontend](./5-use-react-for-frontend.md) (2026-06-21).**
+> The learning focus shifted to React + AWS, and the move to WorkOS AuthKit (ADR-4) removed SvelteKit's
+> Better Auth advantage. The web + BFF/SSR approach below still holds — only the framework changed.
 
 # 1. Use Web/SvelteKit for Frontend
 
@@ -74,3 +78,4 @@ There are a few things that we will need to think about
 | Date       | Author         | Description      |
 | ---------- | -------------- | ---------------- |
 | 2025-10-04 | Jaspreet Singh | Initial creation |
+| 2026-06-21 | Jaspreet Singh | Superseded by ADR-5 (Use React for the Frontend) |

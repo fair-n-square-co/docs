@@ -29,7 +29,7 @@
 - FNS-601 Container Configuration *(partial — local docker-compose only; rest → Stage 6)*
 
 ### Stage 1 — Auth & Identity `mvp-foundation`
-- FNS-9 Third-Party Auth Integration (Better Auth)
+- FNS-9 Third-Party Auth Integration (WorkOS AuthKit; was Better Auth)
 - FNS-11 Session Management
 - FNS-10 User Profile Management (backend)
 - FNS-17 User Profile UI

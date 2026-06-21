@@ -11,7 +11,7 @@
 
 | Repo | Purpose (inferred) | Lang | Last push | State | Verdict |
 | --- | --- | --- | --- | --- | --- |
-| **webapp** | SvelteKit UI + BFF + Better Auth login (drizzle, storybook, playwright, husky) | TS | 2025-12-15 | Active | **KEEP** — canonical frontend |
+| **webapp** | SvelteKit UI + BFF + Better Auth login (drizzle, storybook, playwright, husky) | TS | 2025-12-15 | Active | **KEEP** — canonical frontend; re-scaffold on React + WorkOS (ADR-5/ADR-4) |
 | **apis** | Proto/contracts: `buf` + connectRPC, `proto/fairnsquare`, generated Go+TS | TS | 2025-12-13 | Active | **KEEP + RENAME → `proto`** |
 | **docs** | ADRs, roadmap, product spec, diagrams (this repo) | — | 2026-06-19 | Active | **KEEP** |
 | **ledger** | Ledger/transactions service — sqlc + goose | Go/PLpgSQL | 2026-03-18 | Active-ish | **FOLD into `core`** |
@@ -31,7 +31,7 @@
 
 | Component (from ADRs) | Repo home | Status |
 | --- | --- | --- |
-| SvelteKit UI + BFF (+ Better Auth login) | `webapp` | ✅ |
+| React UI + BFF (+ WorkOS AuthKit login) | `webapp` | ⚠️ exists as SvelteKit; re-scaffold on React (ADR-5) |
 | Auth Service (Go) — profiles, JWKs, M2M, future ReBAC | `auth-api` | ⚠️ exists but essentially an empty template; needs real implementation |
 | **Core Service** (Go modular monolith) — groups, friends, expenses, settlement, ledger | **— gap —** | ❌ No `core` repo. `ledger` covers only the ledger slice; the rest of EPIC-4 has no home. |
 | Proto / contracts | `apis` → rename `proto` | ✅ (matches the "Configure Proto Repository" Jira subtask) |
@@ -70,7 +70,7 @@
 
 | Repo | One-line purpose |
 | --- | --- |
-| `webapp` | SvelteKit UI + BFF; hosts Better Auth login & sessions |
+| `webapp` | React UI + BFF; hosts WorkOS AuthKit login & sessions |
 | `auth-api` *(consider rename `auth`)* | Go Auth Service: profiles, JWKs, M2M tokens, ReBAC |
 | `core` *(new)* | Go modular-monolith Core Service: groups, friends, expenses, settlement, ledger |
 | `proto` *(renamed from `apis`)* | Buf/connectRPC contracts + generated Go/TS clients |

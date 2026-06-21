@@ -1,8 +1,11 @@
 ---
 title: Use Better Auth for Authentication
-status: Proposed
+status: Superseded
 date: 2025-10-11
 ---
+
+> **Superseded by [ADR-4: Use WorkOS (AuthKit) for Authentication](./4-use-workos-for-auth.md) (2026-06-21).**
+> Priorities shifted toward spending time on React and AWS rather than self-managing auth.
 
 # 3. Use Better Auth for Authentication
 
@@ -171,3 +174,4 @@ You can import this [excalidraw file](./../diagrams/Fair-n-square-whiteboard.exc
 | Date       | Author         | Description      |
 | ---------- | -------------- | ---------------- |
 | 2025-10-11 | Jaspreet Singh | Initial creation |
+| 2026-06-21 | Jaspreet Singh | Superseded by ADR-4 (Use WorkOS for Authentication) |

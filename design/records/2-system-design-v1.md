@@ -6,6 +6,13 @@ date: 2025-10-07
 
 # 2. System Design v1
 
+> **Update (2026-06-21):** two technology choices below have been revised by later ADRs. The frontend is
+> now **React** (a meta-framework keeping the BFF/SSR role) per [ADR-5](./5-use-react-for-frontend.md),
+> and authentication is now **WorkOS AuthKit** per [ADR-4](./4-use-workos-for-auth.md). The system
+> boundaries and responsibilities in this document are unchanged — only the UI framework and the auth
+> provider differ. Inline references have been updated to match; the original reasoning is preserved in
+> ADR-1 and ADR-3.
+
 ## Context
 
 For building fair-n-square, we want to start with a simple system design that can help us to define system boundaries, identify systems that need to be built, and how these systems will interact with each other.
@@ -14,14 +21,14 @@ For building fair-n-square, we want to start with a simple system design that ca
 
 We will be using a simple microservices based architecture. We will have the following systems:
 
-- UI Frontend: SvelteKit based web app
-- UI Backend: Sveltekit backend for simplifying frontend to be responsive and fast. Leverages SSR. Will likely integrate with Firebase for notifications in the future.
+- UI Frontend: React based web app (see [ADR-5](./5-use-react-for-frontend.md))
+- UI Backend (BFF): React meta-framework / BFF server for simplifying frontend to be responsive and fast. Leverages SSR and holds the session. Integrates WorkOS AuthKit for login.
 - There will be no API gateway in the beginning. Frontend will directly interact with backend services
 - Auth Service: Handle user authentication and authorization. We will use third party service like WorkOS or Firebase to get authentication.
 - Auth DB: We would want to store user profile data. This will also be responsible for handling user sessions, maintaining user profile data, user preferences etc.
 - Core Service: Handles core business logic and data. This system will not handle user profile data.
 - Core DB: This will be responsible for storing core business data.
-- Authentication/Authorization provider: We will likely use WorkOS for this.
+- Authentication provider: WorkOS AuthKit (see [ADR-4](./4-use-workos-for-auth.md)), with Google-only login to start. Authorization (ReBAC) stays in our Auth/Authx service.
 
 The following diagram illustrates the system design. This is created using excallidraw.
 
@@ -30,13 +37,13 @@ You can import this [excalidraw file](./../diagrams/Fair-n-square-whiteboard.exc
 
 ### UI
 
-We will use SvelteKit for UI. It will be a webapp and the layout will be focused on mobile first. We also will leverage server side rendering to make the app faster to load and will use service workers in the future to make it work offline.
+We will use React (via a meta-framework such as Next.js or TanStack Start) for UI — see [ADR-5](./5-use-react-for-frontend.md). It will be a webapp and the layout will be focused on mobile first. We also will leverage server side rendering to make the app faster to load and will use service workers in the future to make it work offline.
 
 Points to consider:
 
-- We want to set clear boundaries for what SvelteKit will be used for. It only focuses on UI related problems. All the business logic will be handled by core service or Auth service.
-- We don't want SvelteKit frontend to interact with Core service much. Most of the data should be rendered by SvelteKit backend. UI could interact with other systems in exceptional scenarios as long as it is documented and justified with why alternatives don't work.
-- We will use SvelteKit backend to directly login/signup users. Sveltekit will manage user sessions. It will interact with Auth service to CRUD user profile data. The sessions will be managed in its own DB.
+- We want to set clear boundaries for what the frontend/BFF will be used for. It only focuses on UI related problems. All the business logic will be handled by core service or Auth service.
+- We don't want the React frontend to interact with Core service much. Most of the data should be rendered by the BFF (frontend server). UI could interact with other systems in exceptional scenarios as long as it is documented and justified with why alternatives don't work.
+- Login/signup is handled by WorkOS AuthKit; the BFF completes the OIDC exchange and manages the user session. On first login the Auth service provisions/links the canonical user record. The BFF interacts with the Auth service to CRUD user profile data.
 
 ### Auth Service
 
@@ -106,3 +113,4 @@ There are a few alternatives that were considered.
 | Date       | Author         | Description      |
 | ---------- | -------------- | ---------------- |
 | 2025-10-07 | Jaspreet Singh | Initial creation |
+| 2026-06-21 | Jaspreet Singh | Updated UI to React (ADR-5) and auth to WorkOS AuthKit (ADR-4) |
