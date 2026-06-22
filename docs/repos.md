@@ -1,4 +1,4 @@
-# Fair N Square — Repository Roundup & Cleanup
+# Repository Structure
 
 > **Status:** Draft for review · **Last updated:** 2026-06-22
 >
