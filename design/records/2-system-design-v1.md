@@ -114,3 +114,4 @@ There are a few alternatives that were considered.
 | ---------- | -------------- | ---------------- |
 | 2025-10-07 | Jaspreet Singh | Initial creation |
 | 2026-06-21 | Jaspreet Singh | Updated UI to React (ADR-5) and auth to WorkOS AuthKit (ADR-4) |
+| 2026-06-22 | Jaspreet Singh | Defined Core Service module layout: `internal/<module>/{api,service,repository}/`, shared infra at `internal/core/{db,config}`, `pkg/middleware/` for cross-cutting middleware ([FNS-87](https://loyalt.atlassian.net/browse/FNS-87)). See [live/core/overview.md](../../live/core/overview.md). |

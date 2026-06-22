@@ -1,6 +1,6 @@
-# Fair N Square — Repository Roundup & Cleanup
+# Repository Structure
 
-> **Status:** Draft for review · **Last updated:** 2026-06-20
+> **Status:** Draft for review · **Last updated:** 2026-06-22
 >
 > An audit of the `fair-n-square-co` GitHub org: what each repo is for, what's needed, and what to
 > clean up. Companion: [`./delivery-plan.html`](./delivery-plan.html), [`./aws-architecture.html`](./aws-architecture.html).
@@ -14,7 +14,7 @@
 | **webapp** | SvelteKit UI + BFF + Better Auth login (drizzle, storybook, playwright, husky) | TS | 2025-12-15 | Active | **KEEP** — canonical frontend; re-scaffold on React + WorkOS (ADR-5/ADR-4) |
 | **apis** | Proto/contracts: `buf` + connectRPC, `proto/fairnsquare`, generated Go+TS | TS | 2025-12-13 | Active | **KEEP + RENAME → `proto`** |
 | **docs** | ADRs, roadmap, product spec, diagrams (this repo) | — | 2026-06-19 | Active | **KEEP** |
-| **ledger** | Ledger/transactions service — sqlc + goose | Go/PLpgSQL | 2026-03-18 | Active-ish | **FOLD into `core`** |
+| **ledger** | Ledger/transactions service — sqlc + goose | Go/PLpgSQL | 2026-03-18 | Active-ish | **FOLDING into `core`** ([FNS-134](https://loyalt.atlassian.net/browse/FNS-134)) — archive after done |
 | **e2e** | Cross-service E2E tests + K8s manifests + docker-compose | Go | 2026-03-18 | Active | **KEEP** (move K8s/infra bits out) |
 | **auth-api** | Intended Auth Service (Go) — but README is verbatim "Go API Template"; looks like an **unmodified bootstrap** | Go | 2025-09-30 | Stale/empty-ish | **KEEP but RESET** — barely started |
 | **jwt-service** | Throwaway: "create a JWT for testing via Firebase", single `jwt.go` | Go | 2026-06-17 | Tiny util | **MERGE → test helpers, then DELETE** |
@@ -33,18 +33,16 @@
 | --- | --- | --- |
 | React UI + BFF (+ WorkOS AuthKit login) | `webapp` | ⚠️ exists as SvelteKit; re-scaffold on React (ADR-5) |
 | Auth Service (Go) — profiles, JWKs, M2M, future ReBAC | `auth-api` | ⚠️ exists but essentially an empty template; needs real implementation |
-| **Core Service** (Go modular monolith) — groups, friends, expenses, settlement, ledger | **— gap —** | ❌ No `core` repo. `ledger` covers only the ledger slice; the rest of EPIC-4 has no home. |
+| **Core Service** (Go modular monolith) — groups, friends, expenses, settlement, ledger | `core` | ⚠️ Scaffolding in progress ([FNS-133](https://loyalt.atlassian.net/browse/FNS-133), [FNS-134](https://loyalt.atlassian.net/browse/FNS-134)). See [live/core/overview.md](../live/core/overview.md). |
 | Proto / contracts | `apis` → rename `proto` | ✅ (matches the "Configure Proto Repository" Jira subtask) |
 | Two Postgres DBs (Auth, Core) | inside `auth-api` + `core` | ✅ migrations in sqlc/goose style |
 | Docs | `docs` | ✅ |
 | **Infra / OpenTofu** | **— gap —** | ❌ No infra repo. K8s manifests currently live in `e2e`. |
 | E2E | `e2e` | ✅ |
 
-**Two gaps to create:**
+**One gap remaining:**
 
-1. **`core`** — the Core Service. Fold `ledger` into it as a module. *Your own ADR-2 says "treat core
-   service as a monolith… keep modular, don't break into smaller services" — a separate `ledger` repo
-   contradicts that.*
+1. ~~**`core`**~~ — ✅ Being created under [FNS-84](https://loyalt.atlassian.net/browse/FNS-84) (subtasks [FNS-133](https://loyalt.atlassian.net/browse/FNS-133), [FNS-134](https://loyalt.atlassian.net/browse/FNS-134)). `ledger` folding in; archived after.
 2. **`infra`** — OpenTofu/AWS (and any k8s), reusable CI/CD workflows. See [`./aws-architecture.html`](./aws-architecture.html).
    Move the K8s manifests out of `e2e` into here.
 
@@ -72,7 +70,7 @@
 | --- | --- |
 | `webapp` | React UI + BFF; hosts WorkOS AuthKit login & sessions |
 | `auth-api` *(consider rename `auth`)* | Go Auth Service: profiles, JWKs, M2M tokens, ReBAC |
-| `core` *(new)* | Go modular-monolith Core Service: groups, friends, expenses, settlement, ledger |
+| `core` | Go modular-monolith Core Service: groups, friends, expenses, settlement, ledger |
 | `proto` *(renamed from `apis`)* | Buf/connectRPC contracts + generated Go/TS clients |
 | `infra` *(new)* | OpenTofu/AWS + k8s + reusable CI/CD workflows |
 | `e2e` | Cross-service E2E tests |
