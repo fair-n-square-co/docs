@@ -1,5 +1,8 @@
 This directory hosts the decision records made for fair n square project.
 
+> Records here capture **why** a decision was made (append-only, point-in-time). For **what is** —
+> the current state of the system by domain — see [live](../live/).
+
 - A record is categorised and structured using directories.
 - A record is made by creating ADR or Architecture decision record.
 - A record consists of Summary, Context, Decision, Consequences.

@@ -12,3 +12,7 @@
 
 ## Architecture desicions
 Design decisions are made in [design](./design/) directory
+
+## Live design
+The current state of the system, organised by domain, lives in [live](./live/). Live docs say *what
+is*; ADRs in [design/records](./design/records/) say *why*.
