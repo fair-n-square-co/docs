@@ -1,265 +1,139 @@
-# Friendship Database Design Documentation
+# Friendship Database Design
 
 ## Overview
 
-This document outlines a PostgreSQL database design for managing friendships with a friend request system. The design supports directional friend requests that can be accepted or rejected, with optimized querying for accepted friendships.
+This document describes how the **core** service models friendships. The design uses a
+**current-state + history** split: a `relationship` table holds the current state for each pair
+of users, and an append-only `friend_event` table records every lifecycle action. Request,
+friendship, and block are all events on the same relationship rather than separate tables.
 
-## Database Schema
+See [`database/erd.md`](../../database/erd.md) for the diagram. The authoritative schema lives in
+the migrations of the `core` repo.
 
-### Tables
+## Context: a lean, WorkOS-aligned `user`
 
-#### `personas`
-Stores user/persona information.
+Core does not own identity. Authentication is handled by WorkOS and the canonical user record
+lives in the Authx service (ADR-2, ADR-4). Core keeps only a local reference:
 
 ```sql
-CREATE TABLE personas (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE "user" (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),  -- our id; FKs point here
+  auth_subject  text NOT NULL UNIQUE,                        -- external auth subject (token `sub`)
+  created_at    timestamptz NOT NULL DEFAULT now()
 );
 ```
 
-#### `friendship_requests`
-Stores friendship requests with status tracking.
+We generate our own `id` so foreign keys never depend on the auth provider's keyspace (the
+provider must be swappable). The external identifier is stored separately in `auth_subject`; no
+profile data is duplicated here.
+
+## Schema
+
+### `relationship` — current state
+
+One row per pair of users. The pair is ordered once at creation, so a plain unique constraint is
+enough to dedupe `(A, B)` and `(B, A)` — no `LEAST/GREATEST` expression index.
 
 ```sql
-CREATE TABLE friendship_requests (
-    id SERIAL PRIMARY KEY,
-    requester_id INTEGER NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
-    recipient_id INTEGER NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
-    status TEXT NOT NULL DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT different_personas CHECK (requester_id != recipient_id),
-    CONSTRAINT valid_status CHECK (status IN ('pending', 'accepted', 'rejected'))
+CREATE TABLE relationship (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_a          uuid NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+  user_b          uuid NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+  status          text NOT NULL DEFAULT 'pending'
+                    CHECK (status IN ('pending','accepted','rejected','cancelled','blocked')),
+  status_actor_id uuid REFERENCES "user"(id) ON DELETE SET NULL,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  updated_at      timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT ordered_users CHECK (user_a < user_b),
+  CONSTRAINT unique_pair   UNIQUE (user_a, user_b)
 );
+CREATE INDEX idx_relationship_user_a ON relationship (user_a, status);
+CREATE INDEX idx_relationship_user_b ON relationship (user_b, status);
 ```
 
-**Status values:**
-- `pending`: Friend request sent but not yet responded to
-- `accepted`: Friend request accepted, users are now friends
-- `rejected`: Friend request declined
+- **`status`** moves `pending` → `accepted` / `rejected` / `cancelled` / `blocked`. It is plain
+  `text` guarded by a `CHECK`, so adding a new state is a one-line migration instead of an
+  `ALTER TYPE` on an enum.
+- **`status_actor_id`** records who caused the current status (the requester while `pending`, the
+  blocker while `blocked`, …). This preserves direction even though the pair is stored ordered and
+  symmetric.
 
-### Indexes
-
-Composite indexes for optimal query performance:
-
-```sql
--- Index for queries filtering by status and requester
-CREATE INDEX idx_friendship_requester 
-ON friendship_requests(status, requester_id);
-
--- Index for queries filtering by status and recipient
-CREATE INDEX idx_friendship_recipient 
-ON friendship_requests(status, recipient_id);
-
--- Prevent duplicate requests in either direction for pending/accepted requests
-CREATE UNIQUE INDEX unique_friendship_request 
-ON friendship_requests (
-    LEAST(requester_id, recipient_id),
-    GREATEST(requester_id, recipient_id)
-) WHERE status IN ('pending', 'accepted');
-```
-
-## Key Design Features
-
-### 1. Referential Integrity
-- Foreign keys ensure friendships can only exist between valid personas
-- `ON DELETE CASCADE` automatically removes friendships when a persona is deleted
-
-### 2. Constraints
-- **No self-friendships**: `requester_id != recipient_id`
-- **Valid status values**: Only 'pending', 'accepted', or 'rejected'
-- **No duplicate requests**: Unique index prevents both (A→B) and (B→A) requests from existing simultaneously in pending/accepted states
-
-### 3. Directional Tracking
-- Preserves who initiated the friendship request
-- Allows asymmetric handling (A requests B, but B hasn't responded yet)
-
-## Common Queries
-
-### Find All Friends of a Persona
+### `friend_event` — append-only history
 
 ```sql
--- Get friend IDs for persona 5
-SELECT 
-    CASE 
-        WHEN requester_id = 5 THEN recipient_id
-        ELSE requester_id
-    END as friend_id,
-    created_at
-FROM friendship_requests
-WHERE status = 'accepted'
-  AND (requester_id = 5 OR recipient_id = 5);
-```
-
-### Get Friends with Full Details
-
-```sql
-SELECT 
-    p.id,
-    p.name,
-    fr.created_at as friends_since
-FROM friendship_requests fr
-JOIN personas p ON (
-    CASE 
-        WHEN fr.requester_id = 5 THEN fr.recipient_id
-        ELSE fr.requester_id
-    END = p.id
-)
-WHERE fr.status = 'accepted'
-  AND (fr.requester_id = 5 OR fr.recipient_id = 5);
-```
-
-### Get Pending Friend Requests (Received)
-
-```sql
-SELECT 
-    p.id,
-    p.name,
-    fr.created_at as requested_at
-FROM friendship_requests fr
-JOIN personas p ON fr.requester_id = p.id
-WHERE fr.status = 'pending'
-  AND fr.recipient_id = 5;
-```
-
-### Send a Friend Request
-
-```sql
-INSERT INTO friendship_requests (requester_id, recipient_id, status)
-VALUES (5, 10, 'pending')
-ON CONFLICT DO NOTHING;
-```
-
-### Accept a Friend Request
-
-```sql
-UPDATE friendship_requests
-SET status = 'accepted', 
-    updated_at = CURRENT_TIMESTAMP
-WHERE requester_id = 10 
-  AND recipient_id = 5 
-  AND status = 'pending';
-```
-
-## Optimization: Bidirectional View
-
-For simpler querying, create a view that presents friendships bidirectionally:
-
-```sql
-CREATE VIEW friends AS
-SELECT 
-    requester_id as persona_id, 
-    recipient_id as friend_id, 
-    created_at 
-FROM friendship_requests 
-WHERE status = 'accepted'
-UNION ALL
-SELECT 
-    recipient_id as persona_id, 
-    requester_id as friend_id, 
-    created_at 
-FROM friendship_requests 
-WHERE status = 'accepted';
-```
-
-**Usage:**
-
-```sql
--- Simple query to get all friends
-SELECT friend_id FROM friends WHERE persona_id = 5;
-
--- Get friends with details
-SELECT p.* 
-FROM friends f
-JOIN personas p ON f.friend_id = p.id
-WHERE f.persona_id = 5;
-```
-
-## Performance Characteristics
-
-### Index Performance
-
-The composite indexes enable efficient lookups:
-
-**Without indexes:**
-- 1M rows: ~500ms per query
-- 10M rows: ~5 seconds per query
-
-**With composite indexes:**
-- 1M rows: ~5ms per query
-- 10M rows: ~5ms per query
-
-Query time remains constant regardless of table size.
-
-### How Indexes Work
-
-When querying for friends:
-1. PostgreSQL uses bitmap index scans on both composite indexes
-2. Quickly finds rows matching `(status='accepted', requester_id=X)`
-3. Quickly finds rows matching `(status='accepted', recipient_id=X)`
-4. Combines results and fetches only relevant rows
-5. No full table scan required
-
-### Verify Index Usage
-
-Check if your queries use indexes efficiently:
-
-```sql
-EXPLAIN ANALYZE
-SELECT 
-    CASE 
-        WHEN requester_id = 5 THEN recipient_id
-        ELSE requester_id
-    END as friend_id
-FROM friendship_requests
-WHERE status = 'accepted'
-  AND (requester_id = 5 OR recipient_id = 5);
-```
-
-Look for "Bitmap Index Scan" or "Index Scan" in the output (good). Avoid "Seq Scan" for large tables (bad).
-
-## Database Naming Conventions Used
-
-- **Tables**: Plural nouns in snake_case (`friendship_requests`, `personas`)
-- **Columns**: Descriptive snake_case (`requester_id`, `created_at`)
-- **Foreign keys**: `table_name_id` pattern (`persona_id`)
-- **Booleans**: `is_`, `has_`, `can_` prefixes (if needed)
-- **Timestamps**: `_at` suffix (`created_at`, `updated_at`)
-- **Indexes**: `idx_` prefix with descriptive name (`idx_friendship_requester`)
-
-## Trade-offs and Considerations
-
-### Pros
-✅ Full referential integrity with foreign keys  
-✅ Tracks friendship request history  
-✅ Preserves who initiated the friendship  
-✅ Excellent query performance with proper indexes  
-✅ Prevents duplicate/conflicting requests  
-
-### Cons
-❌ Queries require CASE statements or views for bidirectional lookups  
-❌ More complex than simple bidirectional storage  
-❌ The view uses UNION ALL which runs on every query (not materialized)  
-
-### When to Use This Design
-- You need to track friend requests and their status
-- You want to know who initiated each friendship
-- You need referential integrity guarantees
-- Query performance is important (with proper indexes)
-
-### Alternative: Simpler Bidirectional Design
-If you don't need request tracking, consider storing friendships once with ordered IDs:
-
-```sql
-CREATE TABLE friendships (
-    id SERIAL PRIMARY KEY,
-    persona_id_1 INTEGER NOT NULL REFERENCES personas(id),
-    persona_id_2 INTEGER NOT NULL REFERENCES personas(id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT ordered_personas CHECK (persona_id_1 < persona_id_2)
+CREATE TABLE friend_event (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  relationship_id uuid NOT NULL REFERENCES relationship(id) ON DELETE CASCADE,
+  actor_id        uuid NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+  type            text NOT NULL
+                    CHECK (type IN ('requested','accepted','rejected','cancelled','blocked','unblocked')),
+  created_at      timestamptz NOT NULL DEFAULT now()
 );
+CREATE INDEX idx_friend_event_relationship ON friend_event (relationship_id, created_at);
 ```
 
-This is simpler but loses request status tracking and directional information.
+Each action a user takes appends one event with the `actor_id` who performed it. The full
+lifecycle of a relationship — including block/unblock cycles — is reconstructable from this log.
+
+## Key design features
+
+1. **Referential integrity / cascade** — every FK to `user` is `ON DELETE CASCADE`, so deleting a
+   user removes their relationships and event history automatically.
+2. **Ordered pair, plain unique** — `CHECK (user_a < user_b)` + `UNIQUE (user_a, user_b)` dedupes
+   the pair without an expression index, keeping reads and constraints simple.
+3. **Direction preserved** — `status_actor_id` (current) and `friend_event.actor_id` (per event)
+   capture who did what, which an ordered symmetric pair alone cannot express.
+4. **Evolvable states** — `text` + `CHECK` for `status`/`type` instead of Postgres enums.
+5. **One relationship, many events** — request, accept/reject, cancel, block, and unblock are all
+   events on a single relationship row, not separate tables.
+
+## Common operations
+
+Two-write operations are wrapped in a single transaction in the service/repository layer.
+
+**Send a friend request** (create the relationship and its first event):
+
+```sql
+-- arguments are pre-ordered so that user_a < user_b
+INSERT INTO relationship (user_a, user_b, status, status_actor_id)
+VALUES ($1, $2, 'pending', $requester)
+RETURNING id;
+
+INSERT INTO friend_event (relationship_id, actor_id, type)
+VALUES ($relationship_id, $requester, 'requested');
+```
+
+**Accept a request** (update current state and append history):
+
+```sql
+UPDATE relationship
+SET status = 'accepted', status_actor_id = $recipient
+WHERE id = $relationship_id;
+
+INSERT INTO friend_event (relationship_id, actor_id, type)
+VALUES ($relationship_id, $recipient, 'accepted');
+```
+
+**List a user's accepted friends:**
+
+```sql
+SELECT * FROM relationship
+WHERE (user_a = $me OR user_b = $me)
+  AND status = 'accepted';
+```
+
+`idx_relationship_user_a` / `idx_relationship_user_b` cover the `(user, status)` lookup from
+either side of the pair.
+
+## Why not a single `friendship_requests` table?
+
+An earlier exploration stored everything in one table keyed by `(requester_id, recipient_id)` with
+a `LEAST/GREATEST` unique index. That approach was rejected because:
+
+- the expression index made symmetric reads and constraints awkward;
+- one table had to mean *request*, *friendship*, and *block* simultaneously, and a `blocked`
+  status mixed with `pending`/`accepted` complicated the unique index;
+- it kept only the latest state, losing the history of who did what and when.
+
+Splitting current state (`relationship`) from history (`friend_event`) keeps each table
+single-purpose, makes lookups index-friendly, and records the full lifecycle.
