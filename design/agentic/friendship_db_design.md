@@ -15,115 +15,39 @@ the migrations of the `core` repo.
 Core does not own identity. Authentication is handled by WorkOS and the canonical user record
 lives in the Authx service (ADR-2, ADR-4). Core keeps only a local reference:
 
-```sql
-CREATE TABLE "user" (
-  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),  -- our id; FKs point here
-  auth_subject  text NOT NULL UNIQUE,                        -- external auth subject (token `sub`)
-  created_at    timestamptz NOT NULL DEFAULT now()
-);
-```
-
-We generate our own `id` so foreign keys never depend on the auth provider's keyspace (the
-provider must be swappable). The external identifier is stored separately in `auth_subject`; no
-profile data is duplicated here.
+- **our own `id`** — every foreign key points here, so the schema never depends on the auth
+  provider's keyspace (the provider must be swappable).
+- **the external auth subject** (the token `sub`) — the only external identifier we store; no name,
+  email, phone, or other profile data is duplicated.
 
 ## Schema
 
-### `friendship` — current state
+Two tables, each single-purpose:
 
-One row per pair of users. The pair is ordered once at creation, so a plain unique constraint is
-enough to dedupe `(A, B)` and `(B, A)` — no `LEAST/GREATEST` expression index.
+- **`friendship` — current state.** One row per pair of users. The pair is stored in a fixed order
+  so a single record represents the relationship regardless of who initiated it. `status` moves
+  `pending` → `accepted`/`rejected`/`cancelled`/`blocked`, and `status_actor_id` records who caused
+  the current status (the requester while `pending`, the blocker while `blocked`, …). This preserves
+  direction even though the pair is stored ordered and symmetric.
+- **`friend_event` — append-only history.** One row per lifecycle action (`requested`, `accepted`,
+  `rejected`, `cancelled`, `blocked`, `unblocked`), each carrying the `actor_id` who performed it.
+  The full lifecycle of a friendship — including block/unblock cycles — is reconstructable from this
+  log.
 
-```sql
-CREATE TABLE friendship (
-  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_a          uuid NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
-  user_b          uuid NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
-  status          text NOT NULL DEFAULT 'pending'
-                    CHECK (status IN ('pending','accepted','rejected','cancelled','blocked')),
-  status_actor_id uuid REFERENCES "user"(id) ON DELETE SET NULL,
-  created_at      timestamptz NOT NULL DEFAULT now(),
-  updated_at      timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT ordered_users CHECK (user_a < user_b),
-  CONSTRAINT unique_pair   UNIQUE (user_a, user_b)
-);
-CREATE INDEX idx_friendship_user_a ON friendship (user_a, status);
-CREATE INDEX idx_friendship_user_b ON friendship (user_b, status);
-```
-
-- **`status`** moves `pending` → `accepted` / `rejected` / `cancelled` / `blocked`. It is plain
-  `text` guarded by a `CHECK`, so adding a new state is a one-line migration instead of an
-  `ALTER TYPE` on an enum.
-- **`status_actor_id`** records who caused the current status (the requester while `pending`, the
-  blocker while `blocked`, …). This preserves direction even though the pair is stored ordered and
-  symmetric.
-
-### `friend_event` — append-only history
-
-```sql
-CREATE TABLE friend_event (
-  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  friendship_id uuid NOT NULL REFERENCES friendship(id) ON DELETE CASCADE,
-  actor_id        uuid NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
-  type            text NOT NULL
-                    CHECK (type IN ('requested','accepted','rejected','cancelled','blocked','unblocked')),
-  created_at      timestamptz NOT NULL DEFAULT now()
-);
-CREATE INDEX idx_friend_event_friendship ON friend_event (friendship_id, created_at);
-```
-
-Each action a user takes appends one event with the `actor_id` who performed it. The full
-lifecycle of a friendship — including block/unblock cycles — is reconstructable from this log.
+See the migrations in the `core` repo for the authoritative columns, constraints, and indexes.
 
 ## Key design features
 
-1. **Referential integrity / cascade** — every FK to `user` is `ON DELETE CASCADE`, so deleting a
-   user removes their friendships and event history automatically.
-2. **Ordered pair, plain unique** — `CHECK (user_a < user_b)` + `UNIQUE (user_a, user_b)` dedupes
-   the pair without an expression index, keeping reads and constraints simple.
+1. **Referential integrity / cascade** — deleting a user removes their friendships and event
+   history automatically.
+2. **Ordered pair** — storing the pair in a fixed order dedupes `(A, B)` and `(B, A)` without an
+   expression index, keeping reads and constraints simple.
 3. **Direction preserved** — `status_actor_id` (current) and `friend_event.actor_id` (per event)
    capture who did what, which an ordered symmetric pair alone cannot express.
-4. **Evolvable states** — `text` + `CHECK` for `status`/`type` instead of Postgres enums.
+4. **Evolvable states** — `status`/`type` are stored as plain text values, so adding a new state is
+   a one-line migration rather than an enum alteration.
 5. **One friendship, many events** — request, accept/reject, cancel, block, and unblock are all
    events on a single friendship row, not separate tables.
-
-## Common operations
-
-Two-write operations are wrapped in a single transaction in the service/repository layer.
-
-**Send a friend request** (create the friendship and its first event):
-
-```sql
--- arguments are pre-ordered so that user_a < user_b
-INSERT INTO friendship (user_a, user_b, status, status_actor_id)
-VALUES ($1, $2, 'pending', $requester)
-RETURNING id;
-
-INSERT INTO friend_event (friendship_id, actor_id, type)
-VALUES ($friendship_id, $requester, 'requested');
-```
-
-**Accept a request** (update current state and append history):
-
-```sql
-UPDATE friendship
-SET status = 'accepted', status_actor_id = $recipient
-WHERE id = $friendship_id;
-
-INSERT INTO friend_event (friendship_id, actor_id, type)
-VALUES ($friendship_id, $recipient, 'accepted');
-```
-
-**List a user's accepted friends:**
-
-```sql
-SELECT * FROM friendship
-WHERE (user_a = $me OR user_b = $me)
-  AND status = 'accepted';
-```
-
-`idx_friendship_user_a` / `idx_friendship_user_b` cover the `(user, status)` lookup from
-either side of the pair.
 
 ## Why not a single `friendship_requests` table?
 
