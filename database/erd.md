@@ -49,22 +49,18 @@ until then core simply receives a user id.
 
 Friendships use a **current-state + history** model rather than a single overloaded table:
 
-- **`friendship`** holds the *current* state for a pair of users — exactly one row per pair.
-  The pair is ordered once at creation (`CHECK (user_a < user_b)`) and a plain
-  `UNIQUE (user_a, user_b)` enforces uniqueness, so there is no `LEAST/GREATEST` expression
-  index. `status` (`pending` → `accepted`/`rejected`/`cancelled`/`blocked`) is plain `text`
-  guarded by a `CHECK` constraint, so adding a new state is a one-line migration rather than an
-  enum alteration. `status_actor_id` records *who* caused the current status (e.g. the requester
-  while `pending`, the blocker while `blocked`), which is how direction is preserved despite the
-  ordered, symmetric pair.
+- **`friendship`** holds the *current* state for a pair of users — exactly one row per pair, with
+  the pair stored in a fixed order so a single record represents the relationship regardless of who
+  initiated it. `status` moves `pending` → `accepted`/`rejected`/`cancelled`/`blocked`, and
+  `status_actor_id` records *who* caused the current status (e.g. the requester while `pending`, the
+  blocker while `blocked`), which is how direction is preserved despite the ordered, symmetric pair.
 - **`friend_event`** is the append-only history — one row per lifecycle action
   (`requested`, `accepted`, `rejected`, `cancelled`, `blocked`, `unblocked`), each carrying the
   `actor_id` who performed it. Request, friendship, and block are all just events on the same
   friendship instead of separate tables.
 
-Creating a friendship (and its first event) and updating a status (and appending an event) are
-each two writes wrapped in a single transaction at the service/repository layer, keeping current
-state and history consistent.
+Updating current state and appending the matching history event happen together, keeping the two
+consistent. The authoritative schema lives in the migrations of the `core` repo.
 
 ## Future modules
 
