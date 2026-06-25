@@ -119,12 +119,12 @@ Stages are ordered by dependency. Each ends at a **checkpoint** you can demo. St
 the MVP; P1–P3 are post-MVP.
 
 ### Stage 0 — Foundation completion *(unblocks everything)*
-Finish the plumbing the rest of the work stands on.
+Finish the plumbing the rest of the work stands on. **Deployment is deliberately deferred to Stage 6** — Stage 0 gets the app building and running *end-to-end locally* (docker-compose); the `infra`/OpenTofu repo and all AWS provisioning move to Stage 6, to be done once the e2e setup works.
 
-- **Repo hygiene** (see [`./repos.md`](./repos.md)): create **`core`** (fold in `ledger`), create **`infra`**, rename `apis` → `proto`, archive/delete the dead/legacy repos. `auth-api` is still a verbatim "Go API Template" — treat Stage 1 as greenfield there.
+- **Repo hygiene** (see [`./repos.md`](./repos.md)): create **`core`** (fold in `ledger`), rename `apis` → `proto`, archive/delete the dead/legacy repos. `auth-api` is still a verbatim "Go API Template" — treat Stage 1 as greenfield there. *(The `infra` repo is deferred to Stage 6.)*
 - Database setup: Auth DB + Core DB schemas, migration tooling (Drizzle/goose), connection pooling — *FNS-5*
 - Core service scaffold: Go project, gRPC/connectRPC server, proto layout, DB wiring — *FNS-25*
-- CI/CD: build + test + lint pipelines per service in GitHub Actions — *FNS-6*
+- CI (build/test/lint only, no deploy): per-service pipelines in GitHub Actions, in each repo's own `.github/workflows` — *FNS-6*
 - Local stack: `docker-compose` for Postgres + services for local dev — *FNS-601 (partial)*
 
 **Checkpoint:** every service builds in CI; `docker-compose up` brings the stack up locally with empty DBs.
@@ -181,6 +181,7 @@ The additionally-requested MVP features, layered onto the proven core.
 > (ECS Fargate + one public ALB + Cloud Map + one RDS Postgres); the async/distributed pieces land in P1.
 > Fly.io remains a valid simpler fallback.
 
+- Create the **`infra`** repo: OpenTofu module/env skeleton + reusable CI/CD workflows (deferred from Stage 0) — *FNS-85*
 - Containerize all services; finalize multi-stage Docker builds — *FNS-601*
 - Production infra on AWS via OpenTofu: ECS Fargate cluster, ALB + ACM + Route 53, RDS Postgres (2 DBs), VPC + endpoints, ECR — *FNS-602 (re-scoped to AWS)*
 - Env/secrets management for dev/staging/prod (SSM Parameter Store / Secrets Manager) — *FNS-603*
