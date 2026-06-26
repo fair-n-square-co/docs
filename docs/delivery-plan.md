@@ -58,7 +58,7 @@ Already **done** (per Jira FNS):
 
 - ✅ Local dev environment, tooling (Go, Node, Docker) — *FNS-2*
 - ✅ Third-party service selection — revised to **WorkOS, Postgres, AWS** (orig. Better Auth/Fly.io) — *FNS-3*
-- ✅ Repository & proto repository structure — *FNS-4*
+- ✅ Repository & `apis` (proto contracts) repository structure — *FNS-4*
 - ✅ Auth service project scaffold — *FNS-8*
 - ✅ SvelteKit project setup — *FNS-15* *(to be re-scaffolded on React, ADR-5)*
 - ✅ Authentication UI (login/signup screens) — *FNS-16*
@@ -121,7 +121,7 @@ the MVP; P1–P3 are post-MVP.
 ### Stage 0 — Foundation completion *(unblocks everything)*
 Finish the plumbing the rest of the work stands on. **Deployment is deliberately deferred to Stage 6** — Stage 0 gets the app building and running *end-to-end locally* (docker-compose); the `infra`/OpenTofu repo and all AWS provisioning move to Stage 6, to be done once the e2e setup works.
 
-- **Repo hygiene** (see [`./repos.md`](./repos.md)): create **`core`** (fold in `ledger`), rename `apis` → `proto`, archive/delete the dead/legacy repos. `auth-api` is still a verbatim "Go API Template" — treat Stage 1 as greenfield there. *(The `infra` repo is deferred to Stage 6.)*
+- **Repo hygiene** (see [`./repos.md`](./repos.md)): create **`core`** (fold in `ledger`), archive/delete the dead/legacy repos. The `apis` contracts repo keeps its name (no rename to `proto`). `auth-api` is still a verbatim "Go API Template" — treat Stage 1 as greenfield there. *(The `infra` repo is deferred to Stage 6.)*
 - Database setup: Auth DB + Core DB schemas, migration tooling (Drizzle/goose), connection pooling — *FNS-5*
 - Core service scaffold: Go project, gRPC/connectRPC server, proto layout, DB wiring — *FNS-25*
 - CI (build/test/lint only, no deploy): per-service pipelines in GitHub Actions, in each repo's own `.github/workflows` — *FNS-6*

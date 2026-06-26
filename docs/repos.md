@@ -12,7 +12,7 @@
 | Repo | Purpose (inferred) | Lang | Last push | State | Verdict |
 | --- | --- | --- | --- | --- | --- |
 | **webapp** | SvelteKit UI + BFF + Better Auth login (drizzle, storybook, playwright, husky) | TS | 2025-12-15 | Active | **KEEP** — canonical frontend; re-scaffold on React + WorkOS (ADR-5/ADR-4) |
-| **apis** | Proto/contracts: `buf` + connectRPC, `proto/fairnsquare`, generated Go+TS | TS | 2025-12-13 | Active | **KEEP + RENAME → `proto`** |
+| **apis** | Proto/contracts: `buf` + connectRPC, `proto/fairnsquare`, generated Go+TS | TS | 2025-12-13 | Active | **KEEP** (retain the `apis` name — no rename) |
 | **docs** | ADRs, roadmap, product spec, diagrams (this repo) | — | 2026-06-19 | Active | **KEEP** |
 | **ledger** | Ledger/transactions service — sqlc + goose | Go/PLpgSQL | 2026-03-18 | Active-ish | **FOLDING into `core`** ([FNS-134](https://loyalt.atlassian.net/browse/FNS-134)) — archive after done |
 | **e2e** | Cross-service E2E tests + K8s manifests + docker-compose | Go | 2026-03-18 | Active | **KEEP** (move K8s/infra bits out) |
@@ -34,7 +34,7 @@
 | React UI + BFF (+ WorkOS AuthKit login) | `webapp` | ⚠️ exists as SvelteKit; re-scaffold on React (ADR-5) |
 | Auth Service (Go) — profiles, JWKs, M2M, future ReBAC | `auth-api` | ⚠️ exists but essentially an empty template; needs real implementation |
 | **Core Service** (Go modular monolith) — groups, friends, expenses, settlement, ledger | `core` | ⚠️ Scaffolding in progress ([FNS-133](https://loyalt.atlassian.net/browse/FNS-133), [FNS-134](https://loyalt.atlassian.net/browse/FNS-134)). See [live/core/overview.md](../live/core/overview.md). |
-| Proto / contracts | `apis` → rename `proto` | ✅ (matches the "Configure Proto Repository" Jira subtask) |
+| Proto / contracts | `apis` | ✅ (matches the "Configure Proto Repository" Jira subtask) |
 | Two Postgres DBs (Auth, Core) | inside `auth-api` + `core` | ✅ migrations in sqlc/goose style |
 | Docs | `docs` | ✅ |
 | **Infra / OpenTofu** | **— gap —** | ❌ No infra repo. K8s manifests currently live in `e2e`. |
@@ -58,9 +58,7 @@
    `codecov-login` into `.tmp/`.
 4. **Delete dead repos** (zero reusable value): `codecov-login`, `demo-repository`. (Archiving is also
    fine and safer — for a learning project, prefer archive over hard delete.)
-5. **Rename** `apis` → `proto` (GitHub auto-redirects old URLs; update `buf` module paths + imports in
-   `webapp`/`auth-api`).
-6. **Create** `core` and `infra`; **fold** `ledger` into `core`, then archive `ledger`.
+5. **Create** `core` and `infra`; **fold** `ledger` into `core`, then archive `ledger`. *(The `apis` contracts repo keeps its name — no rename to `proto`.)*
 
 ---
 
@@ -71,7 +69,7 @@
 | `webapp` | React UI + BFF; hosts WorkOS AuthKit login & sessions |
 | `auth-api` *(consider rename `auth`)* | Go Auth Service: profiles, JWKs, M2M tokens, ReBAC |
 | `core` | Go modular-monolith Core Service: groups, friends, expenses, settlement, ledger |
-| `proto` *(renamed from `apis`)* | Buf/connectRPC contracts + generated Go/TS clients |
+| `apis` | Buf/connectRPC contracts + generated Go/TS clients |
 | `infra` *(new)* | OpenTofu/AWS + k8s + reusable CI/CD workflows |
 | `e2e` | Cross-service E2E tests |
 | `docs` | ADRs, roadmap, product spec, diagrams |
@@ -95,10 +93,10 @@ CI/CD for multiple services" *as negatives taken on for the learning value*. Tha
   brutal for 1–2 people, while still building independent service containers (Buf, Go workspaces,
   bun/Turbo workspaces all support it).
 
-**Concrete recommendation:** **monorepo for code** (`core`, `auth`, `webapp`, `proto`, `infra`, `e2e`
+**Concrete recommendation:** **monorepo for code** (`core`, `auth`, `webapp`, `apis`, `infra`, `e2e`
 as top-level dirs) **+ keep `docs` separate.** You get ~90% of the architectural learning (modular
 monolith, gRPC contracts, multi-service deploys) without the cross-repo coordination tax that dominates
-solo work. If you specifically want the cross-repo contract-publishing lesson, keep `proto` split out
+solo work. If you specifically want the cross-repo contract-publishing lesson, keep `apis` split out
 and monorepo the rest.
 
 ---
