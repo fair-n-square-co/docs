@@ -14,27 +14,41 @@
 
 | Label | Meaning | Stages |
 | --- | --- | --- |
-| `mvp-foundation` | Plumbing that unblocks the MVP | Stage 0–1 |
+| `mvp-foundation` | Plumbing + the deploy-first walking skeleton | Stage 0–1 (incl. 0.5) |
 | `mvp-core` | The core money loop | Stage 2–4 |
 | `mvp-features` | Extra features requested in MVP | Stage 5 |
-| `mvp-launch` | Production readiness for launch | Stage 6 |
+| `mvp-launch` | Production hardening for launch | Stage 6 |
 | `post-mvp` | Deferred | P1–P3 |
+
+> **Applied 2026-06-27:** the board now has **Stage 0.5 — Walking Skeleton & First Deploy**
+> (Epic **FNS-137**), inserted to deploy a thin slice to AWS *before* the feature stages. See the
+> Stage 0.5 section below.
 
 ## Stage → ticket mapping
 
-### Stage 0 — Foundation `mvp-foundation`
-- FNS-5 Database Setup
-- FNS-25 Core Service Project Setup
-- FNS-6 CI/CD Pipeline Setup
-- FNS-601 Container Configuration *(partial — local docker-compose only; rest → Stage 6)*
+### Stage 0 — Foundation `mvp-foundation` *(Epic FNS-74)*
+- FNS-88 Database Setup *(Done)*
+- FNS-87 Core Service Project Setup + gRPC plumbing *(Done)*
+- FNS-89 CI/CD Pipeline Setup *(Done)*
+- FNS-84 Create `core` repo *(Done)*
 
-### Stage 1 — Auth & Identity `mvp-foundation`
-- FNS-9 Third-Party Auth Integration (WorkOS AuthKit; was Better Auth)
-- FNS-11 Session Management
-- FNS-10 User Profile Management (backend)
-- FNS-17 User Profile UI
-- FNS-13 M2M Token Service
-- FNS-26 User Integration Layer (Core ↔ Auth)
+### Stage 0.5 — Walking Skeleton & First Deploy `mvp-foundation` *(Epic FNS-137 — NEW)*
+The deploy-first slice. Build the thinnest vertical cut and ship it to AWS before any feature stage.
+- FNS-138 webapp: re-scaffold on React + BFF (bare shell) *(new)*
+- FNS-91 WorkOS AuthKit hosted login + sessions *(moved up from Stage 1)*
+- FNS-139 core: first connectRPC endpoint (GetMe/Hello) + BFF call *(new)*
+- FNS-90 docker-compose local stack *(re-scoped to bare-minimum services)*
+- FNS-85 Create `infra` repo (OpenTofu skeleton + reusable CI/CD) *(moved up from Stage 6)*
+- FNS-140 Minimal AWS infra: ECS Fargate (webapp+core), 1 ALB, 1 RDS, ECR *(new; subset of FNS-112)*
+- FNS-141 Deploy skeleton to AWS via GitHub Actions + OIDC *(new; subset of FNS-114)*
+
+### Stage 1 — Auth & Identity `mvp-foundation` *(Epic FNS-75)*
+Hosted login moved up to Stage 0.5; Stage 1 is now the *real* identity layer on top of it.
+- FNS-92 Canonical user record + JIT provisioning
+- FNS-93 User Profile CRUD (Auth service)
+- FNS-94 User Profile UI (React)
+- FNS-95 M2M Token Service + JWKS hosting/validation
+- FNS-96 User Integration Layer (Core ↔ Auth, token validation)
 
 ### Stage 2 — Groups & Friends `mvp-core`
 - FNS-28 Friends/Contacts Management Backend
@@ -57,17 +71,16 @@
 - FNS-32 Todo List Feature Backend
 - FNS-23 Todo List Feature UI
 
-### Stage 6 — Production Readiness `mvp-launch`
-- FNS-601 Container Configuration *(remainder)*
-- FNS-602 Production Infrastructure Setup
-- FNS-603 Environment Configuration
-- FNS-604 Deployment Automation
-- FNS-703 API Security *(rate limiting, validation, CORS)*
-- FNS-702 Data Privacy *(TLS in transit only for MVP)*
-- FNS-501 Logging Infrastructure *(structured logging only)*
-- FNS-502 Metrics & Monitoring *(health checks + uptime only)*
-- FNS-57 Unit Testing *(split + ledger)*
-- FNS-59 End-to-End Testing *(critical journeys)*
+### Stage 6 — Production Readiness (Hardening) `mvp-launch` *(Epic FNS-80)*
+> First deploy already shipped in Stage 0.5 — this stage *hardens* it.
+- FNS-111 Containerize all services (multi-stage Docker builds)
+- FNS-112 AWS infra hardening *(multi-AZ, autoscaling, secrets — hardens FNS-140)*
+- FNS-113 Env/secrets management (SSM / Secrets Manager)
+- FNS-114 Deployment automation hardening *(circuit-breaker rollback, env-gated — hardens FNS-141)*
+- FNS-115 Baseline security *(rate limiting, validation, CORS, TLS)*
+- FNS-116 Minimal observability *(structured logging + health checks)*
+- FNS-117 Unit Testing *(split + ledger)*
+- FNS-118 End-to-End Testing *(critical journeys)*
 
 ### Post-MVP `post-mvp`
 - **P1:** FNS-12 (FGA/ReBAC), FNS-36/37/38 (metrics/tracing/alerting), FNS-39 (perf setup), FNS-46/47/48/49/50 (security & compliance), FNS-58/60/61 (integration/perf/UAT), FNS-904
@@ -97,5 +110,7 @@ The current backlog is a flat 1:1 of the old roadmap and is missing a few MVP-sh
 
 ## How to apply
 
-Approve this and I can apply the labels + `0.1.0-mvp` fix version and create the gap tickets via the
-Jira API, or you can apply them manually from the table above.
+**Stage 0.5 reorg — applied 2026-06-27** via the Jira API: created Epic **FNS-137** + stories
+**FNS-138/139/140/141**; moved **FNS-85, FNS-90, FNS-91** under it; annotated **FNS-112/114** as the
+production-hardening supersets. Remaining manual step: apply the `0.1.0-mvp` fix version across
+Stages 0–6 if you want the board filtered by release.

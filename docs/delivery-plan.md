@@ -115,11 +115,11 @@ If that loop works end-to-end and is deployed, the MVP is a success. Everything 
 
 ## 3. Delivery Stages
 
-Stages are ordered by dependency. Each ends at a **checkpoint** you can demo. Stages 0–6 constitute
-the MVP; P1–P3 are post-MVP.
+Stages are ordered by dependency. Each ends at a **checkpoint** you can demo. Stages 0–6 (including
+the deploy-first **Stage 0.5**) constitute the MVP; P1–P3 are post-MVP.
 
 ### Stage 0 — Foundation completion *(unblocks everything)*
-Finish the plumbing the rest of the work stands on. **Deployment is deliberately deferred to Stage 6** — Stage 0 gets the app building and running *end-to-end locally* (docker-compose); the `infra`/OpenTofu repo and all AWS provisioning move to Stage 6, to be done once the e2e setup works.
+Finish the plumbing the rest of the work stands on. Stage 0 gets the app building and running *end-to-end locally*; the **first AWS deploy happens next, in Stage 0.5** (a thin walking skeleton), **not** at the end. We deploy the skeleton early so every feature stage merges onto a live system and the hardest work (AWS/ECS/ALB/RDS/IAM/TLS) is de-risked first — *not* discovered at launch.
 
 - **Repo hygiene** (see [`./repos.md`](./repos.md)): create **`core`** (fold in `ledger`), archive/delete the dead/legacy repos. The `apis` contracts repo keeps its name (no rename to `proto`). `auth-api` is still a verbatim "Go API Template" — treat Stage 1 as greenfield there. *(The `infra` repo is deferred to Stage 6.)*
 - Database setup: Auth DB + Core DB schemas, migration tooling (Drizzle/goose), connection pooling — *FNS-5*
@@ -129,15 +129,34 @@ Finish the plumbing the rest of the work stands on. **Deployment is deliberately
 
 **Checkpoint:** every service builds in CI; `docker-compose up` brings the stack up locally with empty DBs.
 
+### Stage 0.5 — Walking Skeleton & First Deploy *(MVP — deploy-first)* — *Epic FNS-137*
+Cut the thinnest possible vertical slice through the real architecture and **deploy it to AWS**. This is the "get everything set up and deployed, then add features" milestone — it exists so deployment is proven *before* the feature stages, not after them.
+
+- `webapp`: re-scaffold on **React + BFF** (bare shell, off SvelteKit per ADR-5) — *FNS-138*
+- WorkOS AuthKit **hosted** login + sessions in the BFF (Google) — *FNS-91*
+- `core`: one trivial connectRPC endpoint (`GetMe`/`Hello`) + BFF call rendered in the UI — *FNS-139*
+- `docker-compose` local stack of the **bare-minimum** services — *FNS-90*
+- Create the `infra` repo: OpenTofu skeleton + reusable CI/CD — *FNS-85*
+- **Minimal** AWS infra: ECS Fargate (webapp+core), 1 ALB, 1 RDS, ECR — *FNS-140 (subset of FNS-112)*
+- Deploy the skeleton to AWS via GitHub Actions + OIDC — *FNS-141 (subset of FNS-114)*
+
+> `auth-api` stays a minimal stub here — WorkOS runs the hosted flow. The heavier auth (canonical
+> user record, profile CRUD, M2M/JWKS, Core↔Auth token validation) is deliberately **NOT** skeleton
+> work and lands in Stage 1.
+
+**🏁 Checkpoint:** a public HTTPS URL where you log in and see data fetched from `core` rendered in the UI. **The app is deployed.**
+
 ### Stage 1 — Auth & Identity *(MVP)*
-Make login real and give the Core service a trusted user context.
+Now that login + a deployed slice exist, build the *real* identity layer on top.
 
-- WorkOS AuthKit integration in the React BFF: Google login, session management — *FNS-9, FNS-11*
-- User profile CRUD in Auth service + profile UI — *FNS-10, FNS-17*
-- M2M token service so Core can call Auth on behalf of users; JWK hosting/validation — *FNS-13*
-- Core ↔ Auth integration layer: token validation middleware, user context — *FNS-26*
+- Canonical user record + JIT provisioning — *FNS-92*
+- User profile CRUD in Auth service + profile UI — *FNS-93, FNS-94 (was FNS-10, FNS-17)*
+- M2M token service so Core can call Auth on behalf of users; JWK hosting/validation — *FNS-95 (was FNS-13)*
+- Core ↔ Auth integration layer: token validation middleware, user context — *FNS-96 (was FNS-26)*
 
-**Checkpoint:** a user signs up, logs in, edits their profile; Core can validate a request's identity.
+> Hosted login (FNS-91) and basic session management moved **up** to Stage 0.5 — they're skeleton work.
+
+**Checkpoint:** a user signs up, logs in, edits their profile; Core can validate a request's identity via M2M tokens.
 
 ### Stage 2 — Groups & Friends *(MVP)*
 Build the social graph the money sits on top of.
@@ -175,17 +194,17 @@ The additionally-requested MVP features, layered onto the proven core.
 
 **Checkpoint:** expenses in mixed currencies balance correctly; receipts attach; group todos work.
 
-### Stage 6 — Production Readiness *(MVP launch)*
-> **Deployment target: AWS** (the learning track), provisioned with **OpenTofu** — see
-> [`./aws-architecture.md`](./aws-architecture.md). The MVP runs the minimal slice of that design
-> (ECS Fargate + one public ALB + Cloud Map + one RDS Postgres); the async/distributed pieces land in P1.
-> Fly.io remains a valid simpler fallback.
+### Stage 6 — Production Readiness *(MVP launch — hardening)*
+> **The first deploy already happened in Stage 0.5.** Stage 6 is no longer "stand up AWS for the
+> first time" — it's **hardening** the skeleton's minimal footprint (FNS-140/141) into a
+> production-grade deployment: multi-AZ, autoscaling, secrets, rollback, security, observability.
+> Deployment target stays **AWS** (the learning track), provisioned with **OpenTofu** — see
+> [`./aws-architecture.md`](./aws-architecture.md). Fly.io remains a valid simpler fallback.
 
-- Create the **`infra`** repo: OpenTofu module/env skeleton + reusable CI/CD workflows (deferred from Stage 0) — *FNS-85*
-- Containerize all services; finalize multi-stage Docker builds — *FNS-601*
-- Production infra on AWS via OpenTofu: ECS Fargate cluster, ALB + ACM + Route 53, RDS Postgres (2 DBs), VPC + endpoints, ECR — *FNS-602 (re-scoped to AWS)*
+- Containerize all services; finalize multi-stage Docker builds — *FNS-111*
+- Production-harden the AWS infra via OpenTofu (multi-AZ, autoscaling, NAT-avoidance, SG chaining, staging/prod) — *FNS-112 (hardens FNS-140)*
 - Env/secrets management for dev/staging/prod (SSM Parameter Store / Secrets Manager) — *FNS-603*
-- Deployment automation + rollback: GitHub Actions + OIDC, `tofu plan`/`apply`, ECS circuit-breaker — *FNS-604*
+- Deployment automation hardening: ECS circuit-breaker auto-rollback, env-gated promotion, multi-env pipelines — *FNS-114 (hardens FNS-141)*
 - Baseline security: rate limiting, input validation, CORS, TLS everywhere — *FNS-703, FNS-702 (partial)*
 - Minimal observability: structured logging + health checks/uptime — *FNS-501, FNS-502 (partial)*
 - Core test coverage: unit tests for split/ledger + E2E for critical journeys in CI — *FNS-57, FNS-59*
@@ -222,16 +241,19 @@ See [`./aws-architecture.md`](./aws-architecture.md) §5 and §8 for the full di
 ## 5. Critical Path & Sequencing Notes
 
 ```
-Stage 0 ──► Stage 1 ──► Stage 2 ──► Stage 3 ──► Stage 4 ──► [Alpha]
-                                                   │
-                                                   ├─► Stage 5 (features)
-                                                   └─► Stage 6 (launch) ──► [MVP Launch]
-                                                                               │
-                                                                  P1 ─► P2 ─► P3
+Stage 0 ──► Stage 0.5 ──► Stage 1 ──► Stage 2 ──► Stage 3 ──► Stage 4 ──► [Alpha]
+            [DEPLOYED]                                           │
+                                                                 ├─► Stage 5 (features)
+                                                                 └─► Stage 6 (hardening) ──► [MVP Launch]
+                                                                                                 │
+                                                                                    P1 ─► P2 ─► P3
 ```
 
-- **Stage 0 is the current bottleneck** — Core service and DB schemas don't exist yet, and almost
-  every later stage depends on them. Prioritize it.
+- **Deploy early (Stage 0.5), not late.** A thin walking skeleton goes to AWS *before* the feature
+  stages, so every stage merges onto a live, auto-deploying system and the AWS/IaC learning curve is
+  paid down first. Stage 6 becomes *hardening*, not first-deploy.
+- **Stage 0 is the current bottleneck** — Core service and DB schemas don't exist yet (mostly Done in
+  Jira now), and almost every later stage depends on them. Prioritize it, then Stage 0.5.
 - **Authorization is deliberately deferred.** Shipping simple membership checks in MVP and full
   ReBAC in P1 is the single biggest scope-saver without hurting the product.
 - **Observability is split:** "can I see logs and is it up?" is MVP (Stage 6); tracing/alerting/SLAs
