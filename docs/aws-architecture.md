@@ -207,20 +207,12 @@ Anything Tofu reads/sets becomes plaintext in state. In order of preference:
 
 ### Shared service CI — reusable workflows in `.github`
 
-The infra `plan`/`apply` workflows above are repo-local. **Service** CI (Go build/test/lint, CodeQL)
-is factored out once into the org repo **`fair-n-square-co/.github`** and consumed by each service via
-`workflow_call`, so a new Go service gets full CI in ~10 lines instead of copy-pasting a pipeline.
+The infra `plan`/`apply` workflows above are repo-local.
+**Service** CI (Go build/test/lint, CodeQL) is factored out once into the org repo **`fair-n-square-co/.github`** and consumed by each service via `workflow_call`, so a new Go service gets full CI in ~10 lines instead of copy-pasting a pipeline.
 
-- **`go-ci`** — lint (golangci-lint), build+vet, test, **govulncheck**, and an optional integration
-  pass. Inputs (`go-version-file`, `golangci-lint-version`, `run-integration`, `integration-packages`,
-  …) carry sane defaults. Repo-specific jobs (e.g. `core`'s sqlc/mocks codegen-drift check) stay in the
-  caller workflow alongside the `uses:` job.
-- **`codeql`** — CodeQL analysis of Go source **and** the repo's own Actions workflows. The reusable
-  workflow declares the permissions it needs; GitHub intersects them with what the caller grants.
-- **Versioning:** published behind a moving major tag **`@v1`** (immutable `v1.0.0` anchor underneath).
-  Callers pin `…/go-ci.yml@v1`; patch/minor fixes move the `v1` tag with no caller change. A
-  `.github/zizmor.yml` `ref-pin` policy allows first-party (`fair-n-square-co/*`) tag refs while keeping
-  all third-party actions pinned to a full commit SHA.
+- **`go-ci`** — lint (golangci-lint), build+vet, test, **govulncheck**, and an optional integration pass. Inputs (`go-version-file`, `golangci-lint-version`, `run-integration`, `integration-packages`, …) carry sane defaults. Repo-specific jobs (e.g. `core`'s sqlc/mocks codegen-drift check) stay in the caller workflow alongside the `uses:` job.
+- **`codeql`** — CodeQL analysis of Go source **and** the repo's own Actions workflows. The reusable workflow declares the permissions it needs; GitHub intersects them with what the caller grants.
+- **Versioning:** published behind a moving major tag **`@v1`** (immutable `v1.0.0` anchor underneath). Callers pin `…/go-ci.yml@v1`; patch/minor fixes move the `v1` tag with no caller change. A `.github/zizmor.yml` `ref-pin` policy allows first-party (`fair-n-square-co/*`) tag refs while keeping all third-party actions pinned to a full commit SHA.
 - **First adopter:** `core`. Roll out to `auth-api` and other Go services as they come online.
 
 ### Build order
