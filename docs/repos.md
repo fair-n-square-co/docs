@@ -1,6 +1,6 @@
 # Repository Structure
 
-> **Status:** Draft for review · **Last updated:** 2026-06-22
+> **Status:** Draft for review · **Last updated:** 2026-06-28
 >
 > An audit of the `fair-n-square-co` GitHub org: what each repo is for, what's needed, and what to
 > clean up. Companion: [`./delivery-plan.html`](./delivery-plan.html), [`./aws-architecture.html`](./aws-architecture.html).
@@ -23,7 +23,7 @@
 | **app** | Old Flutter mobile bootstrap | Dart | 2024-05-23 | Stale; mobile is post-MVP | **ARCHIVE** |
 | **codecov-login** | Throwaway Codecov OAuth helper, single `main.go` | Go | 2024-04-25 | Dead | **DELETE** |
 | **demo-repository** | GitHub default demo template, never used | HTML | 2024-03-18 | Dead | **DELETE** |
-| **.github** | Org profile | — | 2024-03-18 | Minimal | **KEEP** — flesh out org README |
+| **.github** | Org profile **+ reusable CI/CD workflows** (`go-ci`, `codeql`) consumed by service repos via `workflow_call`, versioned `@v1` ([FNS-85](https://loyalt.atlassian.net/browse/FNS-85)) | YAML | 2026-06-28 | Active | **KEEP** — shared CI home; flesh out org README |
 
 ---
 
@@ -43,7 +43,7 @@
 **Both repo gaps now closed; follow-up work remains:**
 
 1. ~~**`core`**~~ — ✅ Being created under [FNS-84](https://loyalt.atlassian.net/browse/FNS-84) (subtasks [FNS-133](https://loyalt.atlassian.net/browse/FNS-133), [FNS-134](https://loyalt.atlassian.net/browse/FNS-134)). `ledger` folding in; archived after.
-2. ~~**`infra`**~~ — ✅ Created under [FNS-85](https://loyalt.atlassian.net/browse/FNS-85): OpenTofu skeleton (ECS Fargate per [`./aws-architecture.html`](./aws-architecture.html) §2) + plan/apply CI. Remaining: **drop** the K8s manifests from `e2e` — not relocated, since k8s is no longer a deploy target under the Fargate decision; `e2e` runs on docker-compose, and `infra` can host a full-stack compose for local bring-up. Also consolidate per-repo CI into reusable workflows in `.github`.
+2. ~~**`infra`**~~ — ✅ Created under [FNS-85](https://loyalt.atlassian.net/browse/FNS-85): OpenTofu skeleton (ECS Fargate per [`./aws-architecture.html`](./aws-architecture.html) §2) + plan/apply CI. Remaining: **drop** the K8s manifests from `e2e` — not relocated, since k8s is no longer a deploy target under the Fargate decision; `e2e` runs on docker-compose, and `infra` can host a full-stack compose for local bring-up. ✅ Per-repo CI consolidated into reusable workflows in **`.github`** (`go-ci`, `codeql`, referenced `@v1`); `core` is the first adopter.
 
 ---
 
@@ -72,7 +72,7 @@
 | `infra` | OpenTofu/AWS (ECS Fargate) + reusable CI/CD workflows + local-stack docker-compose |
 | `e2e` | Cross-service E2E tests |
 | `docs` | ADRs, roadmap, product spec, diagrams |
-| `.github` | Org profile + shared community-health files |
+| `.github` | Org profile + shared community-health files + **reusable CI/CD workflows** (`go-ci`, `codeql`, `@v1`) |
 
 **Archived (reference only):** `transactions`, `app`. **Deleted:** `web-app`, `ledger` (after merge),
 `jwt-service`, `codecov-login`, `demo-repository`.
