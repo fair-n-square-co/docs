@@ -51,7 +51,7 @@
       primitives without drowning in ops or blowing past free-tier (~$45–60/mo).</p>
     <div class="meta-row">
       <span class="chip">Status: Draft for review</span>
-      <span class="chip">Updated: 2026-06-20</span>
+      <span class="chip">Updated: 2026-06-28</span>
       <span class="chip"><a href="./index.html">← Docs index</a></span>
       <span class="chip"><a href="./delivery-plan.html">Delivery plan</a></span>
       <span class="chip"><a href="./repos.html">Repos</a></span>
@@ -232,11 +232,11 @@
       and consumed by each service via <code>workflow_call</code>, so a new Go service gets full CI in
       ~10 lines instead of copy-pasting a pipeline.</p>
     <ul>
-      <li><strong><code>go-ci.yml</code></strong> — lint (golangci-lint), build+vet, test, <strong>govulncheck</strong>,
+      <li><strong><code>go-ci</code></strong> — lint (golangci-lint), build+vet, test, <strong>govulncheck</strong>,
         and an optional integration pass. Inputs (<code>go-version-file</code>, <code>golangci-lint-version</code>,
         <code>run-integration</code>, <code>integration-packages</code>, …) carry sane defaults. Repo-specific jobs
         (e.g. <code>core</code>'s sqlc/mocks codegen-drift check) stay in the caller workflow alongside the <code>uses:</code> job.</li>
-      <li><strong><code>codeql.yml</code></strong> — CodeQL analysis of Go source <strong>and</strong> the repo's own
+      <li><strong><code>codeql</code></strong> — CodeQL analysis of Go source <strong>and</strong> the repo's own
         Actions workflows. The reusable workflow declares the permissions it needs; GitHub intersects them with what the caller grants.</li>
       <li><strong>Versioning:</strong> published behind a moving major tag <strong><code>@v1</code></strong> (immutable
         <code>v1.0.0</code> anchor underneath). Callers pin <code>…/go-ci.yml@v1</code>; patch/minor fixes move the

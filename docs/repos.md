@@ -69,15 +69,15 @@
 | `auth-api` *(consider rename `auth`)* | Go Auth Service: profiles, JWKs, M2M tokens, ReBAC |
 | `core` | Go modular-monolith Core Service: groups, friends, expenses, settlement, ledger |
 | `apis` | Buf/connectRPC contracts + generated Go/TS clients |
-| `infra` | OpenTofu/AWS (ECS Fargate) + reusable CI/CD workflows + local-stack docker-compose |
+| `infra` | OpenTofu/AWS (ECS Fargate) + reusable OpenTofu modules + local-stack docker-compose |
 | `e2e` | Cross-service E2E tests |
 | `docs` | ADRs, roadmap, product spec, diagrams |
 | `.github` | Org profile + shared community-health files + **reusable CI/CD workflows** (`go-ci`, `codeql`, `@v1`) |
 
-**Archived (reference only):** `transactions`, `app`. **Deleted:** `web-app`, `ledger` (after merge),
-`jwt-service`, `codecov-login`, `demo-repository`.
+**Archived (reference only):** `transactions`, `app`, `ledger` (after its code folds into `core`).
+**Deleted:** `web-app`, `jwt-service`, `codecov-login`, `demo-repository`.
 
-→ From **13 repos to ~8 active** (+2 archived).
+→ From **13 repos to ~8 active** (+3 archived).
 
 ---
 
