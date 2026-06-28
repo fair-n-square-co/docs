@@ -226,6 +226,24 @@
       <li><strong>Merge → apply:</strong> download the <em>same</em> plan artifact and <code>tofu apply tfplan</code>. Gate prod behind a GitHub Environment with required reviewers; <code>concurrency</code> groups per env.</li>
       <li>Skip Atlantis/Spacelift/TFC for now (overkill for two people).</li>
     </ul>
+    <h3>Shared service CI — reusable workflows in <code>.github</code></h3>
+    <p>The infra <code>plan</code>/<code>apply</code> workflows above are repo-local. <strong>Service</strong> CI
+      (Go build/test/lint, CodeQL) is factored out once into the org repo <strong><code>fair-n-square-co/.github</code></strong>
+      and consumed by each service via <code>workflow_call</code>, so a new Go service gets full CI in
+      ~10 lines instead of copy-pasting a pipeline.</p>
+    <ul>
+      <li><strong><code>go-ci.yml</code></strong> — lint (golangci-lint), build+vet, test, <strong>govulncheck</strong>,
+        and an optional integration pass. Inputs (<code>go-version-file</code>, <code>golangci-lint-version</code>,
+        <code>run-integration</code>, <code>integration-packages</code>, …) carry sane defaults. Repo-specific jobs
+        (e.g. <code>core</code>'s sqlc/mocks codegen-drift check) stay in the caller workflow alongside the <code>uses:</code> job.</li>
+      <li><strong><code>codeql.yml</code></strong> — CodeQL analysis of Go source <strong>and</strong> the repo's own
+        Actions workflows. The reusable workflow declares the permissions it needs; GitHub intersects them with what the caller grants.</li>
+      <li><strong>Versioning:</strong> published behind a moving major tag <strong><code>@v1</code></strong> (immutable
+        <code>v1.0.0</code> anchor underneath). Callers pin <code>…/go-ci.yml@v1</code>; patch/minor fixes move the
+        <code>v1</code> tag with no caller change. A <code>.github/zizmor.yml</code> <code>ref-pin</code> policy allows
+        first-party (<code>fair-n-square-co/*</code>) tag refs while keeping all third-party actions pinned to a full commit SHA.</li>
+      <li><strong>First adopter:</strong> <code>core</code>. Roll out to <code>auth-api</code> and other Go services as they come online.</li>
+    </ul>
     <h3>Build order</h3>
     <p>1. Bootstrap state → 2. OIDC + IAM → 3. Networking → 4. Data (RDS + ECR) → 5. Edge + services
       (ACM/Route53, ALB, cluster, ×4 ecs-service) → 6. Messaging (EventBridge/SQS/SNS + Worker) → 7. CI.</p>
