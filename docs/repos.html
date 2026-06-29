@@ -52,7 +52,7 @@
       what's needed, and what to clean up. Goal: from 13 repos down to ~8 active (+2 archived).</p>
     <div class="meta-row">
       <span class="chip">Status: Draft for review</span>
-      <span class="chip">Updated: 2026-06-28</span>
+      <span class="chip">Updated: 2026-06-29</span>
       <span class="chip"><a href="./index.html">← Docs index</a></span>
       <span class="chip"><a href="./delivery-plan.html">Delivery plan</a></span>
       <span class="chip"><a href="./aws-architecture.html">AWS architecture</a></span>
@@ -75,7 +75,7 @@
       <tr><td><code>app</code></td><td>Old Flutter mobile bootstrap</td><td>Dart</td><td>2024-05-23</td><td><span class="v v-arch">Archive</span> (mobile is post-MVP)</td></tr>
       <tr><td><code>codecov-login</code></td><td>Throwaway Codecov OAuth helper, single <code>main.go</code></td><td>Go</td><td>2024-04-25</td><td><span class="v v-del">Delete</span></td></tr>
       <tr><td><code>demo-repository</code></td><td>GitHub default demo template, never used</td><td>HTML</td><td>2024-03-18</td><td><span class="v v-del">Delete</span></td></tr>
-      <tr><td><code>.github</code></td><td>Org profile <strong>+ reusable CI/CD workflows</strong> (<code>go-ci</code>, <code>codeql</code>) consumed by service repos via <code>workflow_call</code>, versioned <code>@v1</code> (FNS-85)</td><td>YAML</td><td>2026-06-28</td><td><span class="v v-keep">Keep</span> — shared CI home; flesh out org README</td></tr>
+      <tr><td><code>.github</code></td><td>Org profile; <strong>reserved for reusable CD (deploy) workflows</strong> (FNS-114). CI is owned per-repo, not centralized here.</td><td>—</td><td>2026-06-29</td><td><span class="v v-keep">Keep</span> — future CD home; flesh out org README</td></tr>
     </table>
   </section>
 
@@ -94,7 +94,7 @@
     </table>
     <div class="callout"><strong>Both repo gaps now closed; follow-up work remains:</strong>
       <br>1. <del><code>core</code></del> ✅ Being created under FNS-84 (FNS-133, FNS-134). <code>ledger</code> folding in; archived after.
-      <br>2. <del><code>infra</code></del> ✅ Created under FNS-85: OpenTofu skeleton (ECS Fargate per <a href="./aws-architecture.html">AWS architecture</a> §2) + plan/apply CI. Remaining: <strong>drop</strong> the K8s manifests from <code>e2e</code> — not relocated, since k8s is no longer a deploy target under the Fargate decision; <code>e2e</code> runs on docker-compose, and <code>infra</code> can host a full-stack compose for local bring-up. ✅ Per-repo CI consolidated into reusable workflows in <strong><code>.github</code></strong> (<code>go-ci</code>, <code>codeql</code>, referenced <code>@v1</code>); <code>core</code> is the first adopter.</div>
+      <br>2. <del><code>infra</code></del> ✅ Created under FNS-85: OpenTofu skeleton (ECS Fargate per <a href="./aws-architecture.html">AWS architecture</a> §2) + plan/apply CI. Remaining: <strong>drop</strong> the K8s manifests from <code>e2e</code> — not relocated, since k8s is no longer a deploy target under the Fargate decision; <code>e2e</code> runs on docker-compose, and <code>infra</code> can host a full-stack compose for local bring-up. Service <strong>CI is owned per-repo</strong> (<code>core</code> inlines its own lint/build/test/govulncheck/CodeQL, all SHA-pinned); the <strong><code>.github</code></strong> org repo is reserved for reusable <strong>CD</strong> (deploy) workflows (FNS-114).</div>
   </section>
 
   <section>
@@ -120,7 +120,7 @@
       <tr><td><code>infra</code> <span class="v v-new">new</span></td><td>OpenTofu/AWS (ECS Fargate) + reusable OpenTofu modules + local-stack docker-compose</td></tr>
       <tr><td><code>e2e</code></td><td>Cross-service E2E tests</td></tr>
       <tr><td><code>docs</code></td><td>ADRs, roadmap, product spec, diagrams</td></tr>
-      <tr><td><code>.github</code></td><td>Org profile + shared community-health files + <strong>reusable CI/CD workflows</strong> (<code>go-ci</code>, <code>codeql</code>, <code>@v1</code>)</td></tr>
+      <tr><td><code>.github</code></td><td>Org profile + shared community-health files + <strong>reusable CD (deploy) workflows</strong> (FNS-114; CI is per-repo)</td></tr>
     </table>
     <p><strong>Archived (reference only):</strong> <code>transactions</code>, <code>app</code>, <code>ledger</code> (after its code folds into <code>core</code>).
        <strong>Deleted:</strong> <code>web-app</code>, <code>jwt-service</code>, <code>codecov-login</code>, <code>demo-repository</code>.</p>
