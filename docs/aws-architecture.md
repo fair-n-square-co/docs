@@ -1,6 +1,6 @@
 # Fair N Square — AWS Architecture, Distributed System & IaC
 
-> **Status:** Draft for review · **Last updated:** 2026-06-20
+> **Status:** Draft for review · **Last updated:** 2026-06-29
 >
 > This document explores deploying Fair N Square on **AWS** (as a deliberate learning exercise),
 > evolving it into a genuinely **distributed system**, and provisioning it with **OpenTofu**.
@@ -204,6 +204,13 @@ Anything Tofu reads/sets becomes plaintext in state. In order of preference:
 - **Merge → apply:** download the *same* plan artifact and `tofu apply tfplan`. Gate prod behind a
   **GitHub Environment with required reviewers**. Use `concurrency` groups per env.
 - Skip Atlantis/Spacelift/TFC for now (overkill for two people).
+
+### Service CI is per-repo; CD is centralized in `.github`
+
+CI stays with each service. Every repo owns its full pipeline in its own `.github/workflows/` — lint (golangci-lint), build+vet, test, govulncheck, and CodeQL, with all actions pinned to a commit SHA. We deliberately do **not** factor CI into org-wide reusable workflows: keeping it per-repo lets each service evolve its pipeline independently, and the duplication is small (one workflow file).
+
+CD is the part worth centralizing. The org repo **`fair-n-square-co/.github`** is reserved for reusable **deployment** workflows (build image → push to ECR → deploy to ECS Fargate) that services call via `workflow_call`. These land with the deploy automation in FNS-114, once OIDC + ECR + the ECS cluster exist — there's nothing to deploy on the resource-free skeleton yet.
+- **First adopter:** `core`. Roll out to `auth-api` and other Go services as they come online.
 
 ### Build order
 1. **Bootstrap state** (S3 + KMS) → migrate env roots to S3 backend.

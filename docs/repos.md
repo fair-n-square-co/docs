@@ -1,6 +1,6 @@
 # Repository Structure
 
-> **Status:** Draft for review · **Last updated:** 2026-06-22
+> **Status:** Draft for review · **Last updated:** 2026-06-29
 >
 > An audit of the `fair-n-square-co` GitHub org: what each repo is for, what's needed, and what to
 > clean up. Companion: [`./delivery-plan.html`](./delivery-plan.html), [`./aws-architecture.html`](./aws-architecture.html).
@@ -15,7 +15,7 @@
 | **apis** | Proto/contracts: `buf` + connectRPC, `proto/fairnsquare`, generated Go+TS | TS | 2025-12-13 | Active | **KEEP** (retain the `apis` name — no rename) |
 | **docs** | ADRs, roadmap, product spec, diagrams (this repo) | — | 2026-06-19 | Active | **KEEP** |
 | **ledger** | Ledger/transactions service — sqlc + goose | Go/PLpgSQL | 2026-03-18 | Active-ish | **FOLDING into `core`** ([FNS-134](https://loyalt.atlassian.net/browse/FNS-134)) — archive after done |
-| **e2e** | Cross-service E2E tests + K8s manifests + docker-compose | Go | 2026-03-18 | Active | **KEEP** (move K8s/infra bits out) |
+| **e2e** | Cross-service E2E tests + docker-compose | Go | 2026-03-18 | Active | **KEEP** (drop the unused K8s manifests; stays docker-compose-based) |
 | **auth-api** | Intended Auth Service (Go) — but README is verbatim "Go API Template"; looks like an **unmodified bootstrap** | Go | 2025-09-30 | Stale/empty-ish | **KEEP but RESET** — barely started |
 | **jwt-service** | Throwaway: "create a JWT for testing via Firebase", single `jwt.go` | Go | 2026-06-17 | Tiny util | **MERGE → test helpers, then DELETE** |
 | **transactions** | Legacy v0 backend (GORM + Atlas + Fly). Your Makefile style reference | Go | 2024-08 | Stale | **ARCHIVE** |
@@ -23,7 +23,7 @@
 | **app** | Old Flutter mobile bootstrap | Dart | 2024-05-23 | Stale; mobile is post-MVP | **ARCHIVE** |
 | **codecov-login** | Throwaway Codecov OAuth helper, single `main.go` | Go | 2024-04-25 | Dead | **DELETE** |
 | **demo-repository** | GitHub default demo template, never used | HTML | 2024-03-18 | Dead | **DELETE** |
-| **.github** | Org profile | — | 2024-03-18 | Minimal | **KEEP** — flesh out org README |
+| **.github** | Org profile; **reserved for reusable CD (deploy) workflows** ([FNS-114](https://loyalt.atlassian.net/browse/FNS-114)). CI is owned per-repo, not centralized here. | — | 2026-06-29 | Active | **KEEP** — future CD home; flesh out org README |
 
 ---
 
@@ -37,14 +37,13 @@
 | Proto / contracts | `apis` | ✅ (matches the "Configure Proto Repository" Jira subtask) |
 | Two Postgres DBs (Auth, Core) | inside `auth-api` + `core` | ✅ migrations in sqlc/goose style |
 | Docs | `docs` | ✅ |
-| **Infra / OpenTofu** | **— gap —** | ❌ No infra repo. K8s manifests currently live in `e2e`. |
+| **Infra / OpenTofu** | `infra` | ⚠️ Repo created with the OpenTofu skeleton + CI ([FNS-85](https://loyalt.atlassian.net/browse/FNS-85)); no AWS resources yet (FNS-112/113/114). Unused K8s manifests to be dropped from `e2e` (Fargate, not k8s). |
 | E2E | `e2e` | ✅ |
 
-**One gap remaining:**
+**Both repo gaps now closed; follow-up work remains:**
 
 1. ~~**`core`**~~ — ✅ Being created under [FNS-84](https://loyalt.atlassian.net/browse/FNS-84) (subtasks [FNS-133](https://loyalt.atlassian.net/browse/FNS-133), [FNS-134](https://loyalt.atlassian.net/browse/FNS-134)). `ledger` folding in; archived after.
-2. **`infra`** — OpenTofu/AWS (and any k8s), reusable CI/CD workflows. See [`./aws-architecture.html`](./aws-architecture.html).
-   Move the K8s manifests out of `e2e` into here.
+2. ~~**`infra`**~~ — ✅ Created under [FNS-85](https://loyalt.atlassian.net/browse/FNS-85): OpenTofu skeleton (ECS Fargate per [`./aws-architecture.html`](./aws-architecture.html) §2) + plan/apply CI. Remaining: **drop** the K8s manifests from `e2e` — not relocated, since k8s is no longer a deploy target under the Fargate decision; `e2e` runs on docker-compose, and `infra` can host a full-stack compose for local bring-up. Service **CI is owned per-repo** (`core` inlines its own lint/build/test/govulncheck/CodeQL, all SHA-pinned); the **`.github`** org repo is reserved for reusable **CD** (deploy) workflows ([FNS-114](https://loyalt.atlassian.net/browse/FNS-114)).
 
 ---
 
@@ -70,15 +69,15 @@
 | `auth-api` *(consider rename `auth`)* | Go Auth Service: profiles, JWKs, M2M tokens, ReBAC |
 | `core` | Go modular-monolith Core Service: groups, friends, expenses, settlement, ledger |
 | `apis` | Buf/connectRPC contracts + generated Go/TS clients |
-| `infra` *(new)* | OpenTofu/AWS + k8s + reusable CI/CD workflows |
+| `infra` | OpenTofu/AWS (ECS Fargate) + reusable OpenTofu modules + local-stack docker-compose |
 | `e2e` | Cross-service E2E tests |
 | `docs` | ADRs, roadmap, product spec, diagrams |
-| `.github` | Org profile + shared community-health files |
+| `.github` | Org profile + shared community-health files + **reusable CD (deploy) workflows** (FNS-114; CI is per-repo) |
 
-**Archived (reference only):** `transactions`, `app`. **Deleted:** `web-app`, `ledger` (after merge),
-`jwt-service`, `codecov-login`, `demo-repository`.
+**Archived (reference only):** `transactions`, `app`, `ledger` (after its code folds into `core`).
+**Deleted:** `web-app`, `jwt-service`, `codecov-login`, `demo-repository`.
 
-→ From **13 repos to ~8 active** (+2 archived).
+→ From **13 repos to ~8 active** (+3 archived).
 
 ---
 

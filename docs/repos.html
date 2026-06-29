@@ -52,7 +52,7 @@
       what's needed, and what to clean up. Goal: from 13 repos down to ~8 active (+2 archived).</p>
     <div class="meta-row">
       <span class="chip">Status: Draft for review</span>
-      <span class="chip">Updated: 2026-06-20</span>
+      <span class="chip">Updated: 2026-06-29</span>
       <span class="chip"><a href="./index.html">← Docs index</a></span>
       <span class="chip"><a href="./delivery-plan.html">Delivery plan</a></span>
       <span class="chip"><a href="./aws-architecture.html">AWS architecture</a></span>
@@ -64,10 +64,10 @@
     <table>
       <tr><th>Repo</th><th>Purpose (inferred)</th><th>Lang</th><th>Last push</th><th>Verdict</th></tr>
       <tr><td><code>webapp</code></td><td>SvelteKit UI + BFF + Better Auth login (drizzle, storybook, playwright, husky)</td><td>TS</td><td>2025-12-15</td><td><span class="v v-keep">Keep</span> canonical frontend; re-scaffold on React + WorkOS (ADR-5/4)</td></tr>
-      <tr><td><code>apis</code></td><td>Proto/contracts: buf + connectRPC, generated Go+TS</td><td>TS</td><td>2025-12-13</td><td><span class="v v-keep">Keep</span> + rename → <code>proto</code></td></tr>
+      <tr><td><code>apis</code></td><td>Proto/contracts: buf + connectRPC, generated Go+TS</td><td>TS</td><td>2025-12-13</td><td><span class="v v-keep">Keep</span> (retain the <code>apis</code> name — no rename)</td></tr>
       <tr><td><code>docs</code></td><td>ADRs, roadmap, product spec, diagrams (this repo)</td><td>—</td><td>2026-06-19</td><td><span class="v v-keep">Keep</span></td></tr>
-      <tr><td><code>ledger</code></td><td>Ledger/transactions service — sqlc + goose</td><td>Go</td><td>2026-03-18</td><td><span class="v v-arch">Fold</span> into <code>core</code></td></tr>
-      <tr><td><code>e2e</code></td><td>Cross-service E2E tests + K8s manifests + docker-compose</td><td>Go</td><td>2026-03-18</td><td><span class="v v-keep">Keep</span> (move infra bits out)</td></tr>
+      <tr><td><code>ledger</code></td><td>Ledger/transactions service — sqlc + goose</td><td>Go</td><td>2026-03-18</td><td><span class="v v-arch">Fold</span> into <code>core</code> (FNS-134); archive after</td></tr>
+      <tr><td><code>e2e</code></td><td>Cross-service E2E tests + docker-compose</td><td>Go</td><td>2026-03-18</td><td><span class="v v-keep">Keep</span> (drop unused K8s manifests; stays docker-compose-based)</td></tr>
       <tr><td><code>auth-api</code></td><td>Intended Auth Service (Go) — README is verbatim "Go API Template"; an unmodified bootstrap</td><td>Go</td><td>2025-09-30</td><td><span class="v v-keep">Keep</span> but reset — barely started</td></tr>
       <tr><td><code>jwt-service</code></td><td>Throwaway: create a JWT for testing via Firebase, single <code>jwt.go</code></td><td>Go</td><td>2026-06-17</td><td><span class="v v-del">Merge→Delete</span></td></tr>
       <tr><td><code>transactions</code></td><td>Legacy v0 backend (GORM + Atlas + Fly). Makefile style reference</td><td>Go</td><td>2024-08</td><td><span class="v v-arch">Archive</span></td></tr>
@@ -75,7 +75,7 @@
       <tr><td><code>app</code></td><td>Old Flutter mobile bootstrap</td><td>Dart</td><td>2024-05-23</td><td><span class="v v-arch">Archive</span> (mobile is post-MVP)</td></tr>
       <tr><td><code>codecov-login</code></td><td>Throwaway Codecov OAuth helper, single <code>main.go</code></td><td>Go</td><td>2024-04-25</td><td><span class="v v-del">Delete</span></td></tr>
       <tr><td><code>demo-repository</code></td><td>GitHub default demo template, never used</td><td>HTML</td><td>2024-03-18</td><td><span class="v v-del">Delete</span></td></tr>
-      <tr><td><code>.github</code></td><td>Org profile</td><td>—</td><td>2024-03-18</td><td><span class="v v-keep">Keep</span> — flesh out</td></tr>
+      <tr><td><code>.github</code></td><td>Org profile; <strong>reserved for reusable CD (deploy) workflows</strong> (FNS-114). CI is owned per-repo, not centralized here.</td><td>—</td><td>2026-06-29</td><td><span class="v v-keep">Keep</span> — future CD home; flesh out org README</td></tr>
     </table>
   </section>
 
@@ -85,17 +85,16 @@
       <tr><th>Component (from ADRs)</th><th>Repo home</th><th>Status</th></tr>
       <tr><td>React UI + BFF (+ WorkOS AuthKit login)</td><td><code>webapp</code></td><td>⚠️ exists as SvelteKit; re-scaffold on React (ADR-5)</td></tr>
       <tr><td>Auth Service (Go) — profiles, JWKs, M2M, ReBAC</td><td><code>auth-api</code></td><td>⚠️ exists but an empty template; needs real implementation</td></tr>
-      <tr><td><strong>Core Service</strong> (Go modular monolith) — groups, friends, expenses, settlement, ledger</td><td><strong>— gap —</strong></td><td>❌ No <code>core</code> repo. <code>ledger</code> covers only the ledger slice.</td></tr>
-      <tr><td>Proto / contracts</td><td><code>apis</code> → <code>proto</code></td><td>✅</td></tr>
+      <tr><td><strong>Core Service</strong> (Go modular monolith) — groups, friends, expenses, settlement, ledger</td><td><code>core</code></td><td>⚠️ Scaffolding in progress (FNS-133, FNS-134).</td></tr>
+      <tr><td>Proto / contracts</td><td><code>apis</code></td><td>✅ (matches the "Configure Proto Repository" subtask)</td></tr>
       <tr><td>Two Postgres DBs (Auth, Core)</td><td>inside <code>auth-api</code> + <code>core</code></td><td>✅ sqlc/goose migrations</td></tr>
       <tr><td>Docs</td><td><code>docs</code></td><td>✅</td></tr>
-      <tr><td><strong>Infra / OpenTofu</strong></td><td><strong>— gap —</strong></td><td>❌ No infra repo. K8s manifests currently live in <code>e2e</code>.</td></tr>
+      <tr><td><strong>Infra / OpenTofu</strong></td><td><code>infra</code></td><td>⚠️ Repo created with the OpenTofu skeleton + CI (FNS-85); no AWS resources yet (FNS-112/113/114). Unused K8s manifests to be dropped from <code>e2e</code> (Fargate, not k8s).</td></tr>
       <tr><td>E2E</td><td><code>e2e</code></td><td>✅</td></tr>
     </table>
-    <div class="callout"><strong>Two gaps to create:</strong>
-      <br>1. <code>core</code> — the Core Service; fold <code>ledger</code> into it as a module.
-      <em>ADR-2 says "treat core service as a monolith… don't break into smaller services" — a separate <code>ledger</code> repo contradicts that.</em>
-      <br>2. <code>infra</code> — OpenTofu/AWS + k8s + reusable CI/CD (see <a href="./aws-architecture.html">AWS architecture</a>); move K8s manifests out of <code>e2e</code>.</div>
+    <div class="callout"><strong>Both repo gaps now closed; follow-up work remains:</strong>
+      <br>1. <del><code>core</code></del> ✅ Being created under FNS-84 (FNS-133, FNS-134). <code>ledger</code> folding in; archived after.
+      <br>2. <del><code>infra</code></del> ✅ Created under FNS-85: OpenTofu skeleton (ECS Fargate per <a href="./aws-architecture.html">AWS architecture</a> §2) + plan/apply CI. Remaining: <strong>drop</strong> the K8s manifests from <code>e2e</code> — not relocated, since k8s is no longer a deploy target under the Fargate decision; <code>e2e</code> runs on docker-compose, and <code>infra</code> can host a full-stack compose for local bring-up. Service <strong>CI is owned per-repo</strong> (<code>core</code> inlines its own lint/build/test/govulncheck/CodeQL, all SHA-pinned); the <strong><code>.github</code></strong> org repo is reserved for reusable <strong>CD</strong> (deploy) workflows (FNS-114).</div>
   </section>
 
   <section>
@@ -105,8 +104,7 @@
       <li><strong>Salvage then remove <code>jwt-service</code>:</strong> move <code>jwt.go</code> into <code>e2e</code> test helpers or <code>webapp</code> dev tooling, commit, then archive/delete.</li>
       <li><strong>Back up private/unique repos</strong> before any delete: <code>git clone --mirror</code> <code>jwt-service</code> + <code>codecov-login</code> into <code>.tmp/</code>.</li>
       <li><strong>Delete dead repos</strong> (zero reusable value): <code>codecov-login</code>, <code>demo-repository</code>. (Archiving is also fine and safer.)</li>
-      <li><strong>Rename</strong> <code>apis</code> → <code>proto</code> (GitHub auto-redirects; update buf module paths + imports).</li>
-      <li><strong>Create</strong> <code>core</code> and <code>infra</code>; fold <code>ledger</code> into <code>core</code>, then archive <code>ledger</code>.</li>
+      <li><strong>Create</strong> <code>core</code> and <code>infra</code>; fold <code>ledger</code> into <code>core</code>, then archive <code>ledger</code>. <em>(The <code>apis</code> contracts repo keeps its name — no rename to <code>proto</code>.)</em></li>
     </ol>
     <div class="callout"><strong>GitHub repo deletion is irreversible</strong> — archive when in doubt. Verify archived/private flags before acting.</div>
   </section>
@@ -118,14 +116,15 @@
       <tr><td><code>webapp</code></td><td>React UI + BFF; hosts WorkOS AuthKit login &amp; sessions</td></tr>
       <tr><td><code>auth-api</code> <span class="v v-arch">rename?</span></td><td>Go Auth Service: profiles, JWKs, M2M tokens, ReBAC</td></tr>
       <tr><td><code>core</code> <span class="v v-new">new</span></td><td>Go modular-monolith Core Service: groups, friends, expenses, settlement, ledger</td></tr>
-      <tr><td><code>proto</code> <span class="v v-new">renamed</span></td><td>Buf/connectRPC contracts + generated Go/TS clients</td></tr>
-      <tr><td><code>infra</code> <span class="v v-new">new</span></td><td>OpenTofu/AWS + k8s + reusable CI/CD workflows</td></tr>
+      <tr><td><code>apis</code></td><td>Buf/connectRPC contracts + generated Go/TS clients</td></tr>
+      <tr><td><code>infra</code> <span class="v v-new">new</span></td><td>OpenTofu/AWS (ECS Fargate) + reusable OpenTofu modules + local-stack docker-compose</td></tr>
       <tr><td><code>e2e</code></td><td>Cross-service E2E tests</td></tr>
       <tr><td><code>docs</code></td><td>ADRs, roadmap, product spec, diagrams</td></tr>
-      <tr><td><code>.github</code></td><td>Org profile + shared community-health files</td></tr>
+      <tr><td><code>.github</code></td><td>Org profile + shared community-health files + <strong>reusable CD (deploy) workflows</strong> (FNS-114; CI is per-repo)</td></tr>
     </table>
-    <p><strong>Archived (reference only):</strong> <code>transactions</code>, <code>app</code>.
-       <strong>Deleted:</strong> <code>web-app</code>, <code>ledger</code> (after merge), <code>jwt-service</code>, <code>codecov-login</code>, <code>demo-repository</code>.</p>
+    <p><strong>Archived (reference only):</strong> <code>transactions</code>, <code>app</code>, <code>ledger</code> (after its code folds into <code>core</code>).
+       <strong>Deleted:</strong> <code>web-app</code>, <code>jwt-service</code>, <code>codecov-login</code>, <code>demo-repository</code>.</p>
+    <p>→ From <strong>13 repos to ~8 active</strong> (+3 archived).</p>
   </section>
 
   <section>
@@ -138,10 +137,10 @@
       <li><strong>Go monorepo</strong> to ship the MVP faster — eliminates cross-repo proto-versioning pain (brutal for 1–2 people) while still building independent service containers.</li>
     </ul>
     <div class="callout"><strong>Concrete recommendation:</strong> monorepo for code
-      (<code>core</code>, <code>auth</code>, <code>webapp</code>, <code>proto</code>, <code>infra</code>,
+      (<code>core</code>, <code>auth</code>, <code>webapp</code>, <code>apis</code>, <code>infra</code>,
       <code>e2e</code> as top-level dirs) + keep <code>docs</code> separate. ~90% of the architectural
       learning without the cross-repo coordination tax that dominates solo work. If you specifically
-      want the cross-repo contract-publishing lesson, keep <code>proto</code> split out and monorepo the rest.</div>
+      want the cross-repo contract-publishing lesson, keep <code>apis</code> split out and monorepo the rest.</div>
   </section>
 
   <footer>

@@ -51,7 +51,7 @@
       primitives without drowning in ops or blowing past free-tier (~$45–60/mo).</p>
     <div class="meta-row">
       <span class="chip">Status: Draft for review</span>
-      <span class="chip">Updated: 2026-06-20</span>
+      <span class="chip">Updated: 2026-06-29</span>
       <span class="chip"><a href="./index.html">← Docs index</a></span>
       <span class="chip"><a href="./delivery-plan.html">Delivery plan</a></span>
       <span class="chip"><a href="./repos.html">Repos</a></span>
@@ -226,6 +226,9 @@
       <li><strong>Merge → apply:</strong> download the <em>same</em> plan artifact and <code>tofu apply tfplan</code>. Gate prod behind a GitHub Environment with required reviewers; <code>concurrency</code> groups per env.</li>
       <li>Skip Atlantis/Spacelift/TFC for now (overkill for two people).</li>
     </ul>
+    <h3>Service CI is per-repo; CD is centralized in <code>.github</code></h3>
+    <p>CI stays with each service. Every repo owns its full pipeline in its own <code>.github/workflows/</code> — lint (golangci-lint), build+vet, test, govulncheck, and CodeQL, with all actions pinned to a commit SHA. We deliberately do <strong>not</strong> factor CI into org-wide reusable workflows: keeping it per-repo lets each service evolve its pipeline independently, and the duplication is small (one workflow file).</p>
+    <p>CD is the part worth centralizing. The org repo <strong><code>fair-n-square-co/.github</code></strong> is reserved for reusable <strong>deployment</strong> workflows (build image → push to ECR → deploy to ECS Fargate) that services call via <code>workflow_call</code>. These land with the deploy automation in FNS-114, once OIDC + ECR + the ECS cluster exist — there's nothing to deploy on the resource-free skeleton yet.</p>
     <h3>Build order</h3>
     <p>1. Bootstrap state → 2. OIDC + IAM → 3. Networking → 4. Data (RDS + ECR) → 5. Edge + services
       (ACM/Route53, ALB, cluster, ×4 ecs-service) → 6. Messaging (EventBridge/SQS/SNS + Worker) → 7. CI.</p>
